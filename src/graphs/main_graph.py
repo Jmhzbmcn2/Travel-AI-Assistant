@@ -43,7 +43,7 @@ graph.add_conditional_edges(
     ["search", "ask_user"]
 )
 
-graph.add_edge("ask_user", "parser")
+graph.add_edge("ask_user", END)
 graph.add_edge("search", "ranker")
 graph.add_edge("ranker", "response")
 graph.add_edge("response", END)

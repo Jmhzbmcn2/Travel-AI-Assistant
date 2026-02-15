@@ -11,6 +11,9 @@ def follow_up_node(state: AgentState) -> dict:
     flight_results = state.get("flight_results", [])
     hotel_results = state.get("hotel_results", [])
 
+    print(f"[FOLLOW_UP] Question: {user_message}")
+    print(f"[FOLLOW_UP] Has {len(flight_results)} flights, {len(hotel_results)} hotels from previous search")
+
     # Nếu không có kết quả trước đó → thông báo cho user
     if not flight_results and not hotel_results:
         return {

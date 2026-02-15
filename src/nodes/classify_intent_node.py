@@ -18,6 +18,8 @@ def classify_intent_node(state: AgentState) -> dict:
     else:
         intent = "chitchat"
 
+    print(f"[CLASSIFY] User: {user_message[:80]}...")
+    print(f"[CLASSIFY] Intent: {intent}")
     return {"intent": intent, "current_step": "classify_intent"}
 
     

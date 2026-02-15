@@ -13,6 +13,7 @@ def response_node(agent_state: AgentState) -> dict:
         llm = LLMs()
         prompt = RESPONSE_PROMPT.format(analysis=ranked_deals)
 
+        print(f"[RESPONSE] Generating final response...")
         response = llm.invoke(prompt)
         return {
             "messages": [AIMessage(content=response)],  

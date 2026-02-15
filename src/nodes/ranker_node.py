@@ -9,6 +9,8 @@ def ranker_node(agent_state: AgentState) -> dict:
         flight_results = agent_state.get("flight_results", [])
         hotel_results = agent_state.get("hotel_results", [])
 
+        print(f"[RANKER] Analyzing {len(flight_results)} flights, {len(hotel_results)} hotels")
+
         llm = LLMs()
         prompt = RANKER_PROMPT.format(
             budget=user_request.get("budget", "Không giới hạn"),

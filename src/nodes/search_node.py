@@ -10,6 +10,8 @@ def search_node(agent_state: AgentState) -> dict:
         flight_results = None
         hotel_results = None
 
+        print(f"[SEARCH] Searching: {user_request.get('origin')} → {user_request.get('destination')} on {user_request.get('departure_date')}")
+
 
         check_out = user_request.get("return_date")
         if not check_out and user_request.get("departure_date"):

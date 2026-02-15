@@ -36,7 +36,7 @@ def parser_node(agent_state: AgentState) -> dict:
         )
 
         response = llm.invoke(prompt)
-        # print(f"[DEBUG parser] LLM raw response:\n{response}")
+        print(f"[PARSER] LLM raw response:\n{response}")
 
         # Strip markdown code block nếu có
         cleaned = response.strip()
@@ -46,16 +46,25 @@ def parser_node(agent_state: AgentState) -> dict:
 
         parsed_data = json.loads(cleaned)
 
+        # Merge với user_request cũ (nếu có) — giữ lại info đã parse trước đó
+        previous_request = agent_state.get("user_request", {})
+        if previous_request:
+            for key, value in previous_request.items():
+                if value and not parsed_data.get(key):
+                    parsed_data[key] = value
+
         # Convert city names → IATA codes
         if parsed_data.get("origin"):
             parsed_data["origin"] = _to_iata(parsed_data["origin"])
         if parsed_data.get("destination"):
             parsed_data["destination"] = _to_iata(parsed_data["destination"])
 
-        # print(f"[DEBUG parser] Parsed data: {parsed_data}")
+        print(f"[PARSER] Parsed data: {parsed_data}")
 
         required = ["origin", "destination", "departure_date"]
         missing = [field for field in required if not parsed_data.get(field)]
+
+        print(f"[PARSER] Missing fields: {missing}")
 
         return {
             "user_request": parsed_data,

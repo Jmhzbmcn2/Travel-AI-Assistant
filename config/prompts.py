@@ -43,12 +43,16 @@ For each recommendation, explain WHY it's a good deal.
 Respond in Vietnamese.
 """
 
-RESPONSE_PROMPT = """You are a friendly Vietnamese travel assistant. Based on the analysis below, present the best travel deals to the user in a clear, engaging format.
+RESPONSE_PROMPT = """You are a friendly Vietnamese travel assistant. Based on the user's travel request and the analysis below, present the best travel deals to the user in a clear, engaging format.
+
+User's travel request:
+{travel_info}
 
 {analysis}
 
 Guidelines:
 - Use Vietnamese language
+- ALWAYS mention the specific travel details (departure date, origin, destination) at the beginning of your response
 - Format prices clearly with currency
 - Highlight the BEST deals with emoji
 - Include practical tips
@@ -66,14 +70,19 @@ Respond in Vietnamese.
 
 CLASSIFY_INTENT_PROMPT = """You are an intent classifier for a travel assistant chatbot.
 
-Given the user's message below, classify it into ONE of these categories:
-- "travel" — if the user is asking to SEARCH for flights, hotels, trips, travel planning, destinations, booking, prices, or anything related to making a NEW travel search.
-- "follow_up" — if the user is asking a question about PREVIOUSLY shown results, such as asking for more details about a specific flight (e.g. departure time, airline), hotel (e.g. amenities, location), or comparing options that were already presented.
+Recent conversation history:
+{conversation_history}
+
+Given the user's LATEST message and the conversation context above, classify it into ONE of these categories:
+- "travel" — if the user is asking to SEARCH for flights, hotels, trips, or is PROVIDING travel information (city names, dates, etc.) in response to the assistant's question.
+- "follow_up" — if the user is asking a question about PREVIOUSLY shown search results, such as asking for more details about a specific flight (e.g. departure time, airline), hotel (e.g. amenities, location), or comparing options that were already presented.
 - "chitchat" — if the user is greeting, asking general questions, making small talk, or anything NOT related to travel.
+
+IMPORTANT: If the assistant just asked the user for travel details (like origin, destination, date) and the user is replying with that information, classify as "travel" even if the reply is short (e.g. "Hôm nay", "Hà Nội", "3 người").
 
 Return ONLY the single word: travel, follow_up, or chitchat. No explanation, no extra text.
 
-User message: {user_message}
+User's latest message: {user_message}
 """
 
 CHITCHAT_PROMPT = """You are a friendly Vietnamese travel assistant chatbot named "Travel AI".

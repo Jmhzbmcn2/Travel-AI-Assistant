@@ -11,7 +11,20 @@ def response_node(agent_state: AgentState) -> dict:
         ranked_deals = agent_state["ranked_deals"]
 
         llm = LLMs()
-        prompt = RESPONSE_PROMPT.format(analysis=ranked_deals)
+        
+        # Tạo travel info string cho response
+        travel_info = (
+            f"- Điểm đi: {user_request.get('origin', 'N/A')}\n"
+            f"- Điểm đến: {user_request.get('destination', 'N/A')}\n"
+            f"- Ngày bay: {user_request.get('departure_date', 'N/A')}\n"
+            f"- Ngày về: {user_request.get('return_date', 'Không có')}\n"
+            f"- Số hành khách: {user_request.get('passengers', 1)}"
+        )
+        
+        prompt = RESPONSE_PROMPT.format(
+            analysis=ranked_deals,
+            travel_info=travel_info
+        )
 
         print(f"[RESPONSE] Generating final response...")
         response = llm.invoke(prompt)

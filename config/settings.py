@@ -8,7 +8,7 @@ load_dotenv()
 
 # ── LLM ──────────────────────────────────────────────
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-LLM_MODEL = os.getenv("LLM_MODEL", "gemini-2.0-flash")
+LLM_MODEL = os.getenv("LLM_MODEL", "gemini-2.5-flash")
 TEMPERATURE = float(os.getenv("TEMPERATURE", "0.3"))
 
 # ── SerpAPI ──────────────────────────────────────────

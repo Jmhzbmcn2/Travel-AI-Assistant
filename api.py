@@ -1,3 +1,4 @@
+import os
 import uuid
 import json
 import asyncio
@@ -9,10 +10,14 @@ from src.graphs.main_graph import travel_agent
 
 app = FastAPI(title="AI Travel Deal Hunter")
 
-# CORS — cho phép React dev server gọi API
+# CORS — đọc từ env CORS_ORIGINS (phân cách bằng dấu phẩy), mặc định localhost cho dev
+_default_origins = ["http://localhost:5173", "http://localhost:3000"]
+_env_origins = os.getenv("CORS_ORIGINS", "")
+cors_origins = [o.strip() for o in _env_origins.split(",") if o.strip()] if _env_origins else _default_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

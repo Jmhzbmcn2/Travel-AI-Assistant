@@ -77,7 +77,19 @@ graph.add_edge("follow_up", END)
 
 # ── Multi-agent flow ─────────────────────────────────
 # Planner → Human Confirm (HITL gate) → Supervisor
-graph.add_edge("planner", "human_confirm")
+# Nếu planner thiếu info → trả message hỏi lại → END
+def route_after_planner(state: dict) -> str:
+    """Route sau planner: có plan → confirm, thiếu info → END."""
+    plan = state.get("plan")
+    if not plan:
+        # Planner trả AIMessage hỏi lại → END
+        return "__end__"
+    return "human_confirm"
+
+graph.add_conditional_edges("planner", route_after_planner, {
+    "human_confirm": "human_confirm",
+    "__end__": END,
+})
 graph.add_edge("human_confirm", "supervisor")
 
 # Supervisor → routes to agents / reflect / respond

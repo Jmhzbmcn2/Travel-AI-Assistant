@@ -18,9 +18,11 @@ graph TD
     A[User Message] --> B[classify_intent]
     B -->|chitchat| C1[chitchat → END]
     B -->|follow_up| C2[follow_up → END]
-    B -->|travel| D[planner]
+    B -->|travel| D["planner<br/>(xem 6 messages gần nhất)"]
 
-    D --> E{"⏸️ HITL Interrupt<br/>User xác nhận plan?"}
+    D --> CHECK{Đủ thông tin?}
+    CHECK -->|"Thiếu điểm đến/đi"| ASK["Hỏi lại user → END"]
+    CHECK -->|Đủ info| E{"⏸️ HITL Interrupt<br/>User xác nhận plan?"}
     E -->|✓ Xác nhận| F[human_confirm]
     E -->|✎ Thay đổi| A
 
@@ -37,8 +39,7 @@ graph TD
     K --> G
 
     G -->|all steps done| L[reflection]
-    L -->|needs fix| M[supervisor<br/>dynamic replan]
-    M --> G
+    L -->|needs fix| G
     L -->|all good| N[response_agent]
     N --> O[END]
 ```

@@ -61,30 +61,60 @@ def planner_node(state: dict) -> dict:
 
     llm = get_llm().with_structured_output(TripPlan)
 
+    # Lấy conversation history gần đây để hiểu context
+    # (ví dụ: user nói "Có" → planner cần biết AI vừa hỏi gì)
+    recent_messages = state["messages"][-6:]
+
     try:
         plan = llm.invoke([
             SystemMessage(content=PLANNER_SYSTEM_PROMPT.format(
                 current_date=current_date
             )),
-            state["messages"][-1],
+            *recent_messages,  # Gửi context, không chỉ message cuối
         ])
 
         plan_dict = plan.model_dump()
-
-        # Lưu tên thành phố gốc trước khi convert → IATA
         constraints = plan_dict.get("constraints", {})
+        steps = plan_dict.get("steps", [])
 
-        # Origin
+        # ── Kiểm tra thiếu info quan trọng ────────────────
+        needs_flights_or_hotels = any(
+            s in steps for s in ["find_flights", "find_hotels"]
+        )
+        has_destination = bool(constraints.get("destination"))
+
+        if needs_flights_or_hotels and not has_destination:
+            # Thiếu thông tin quan trọng → hỏi lại user
+            missing = []
+            if not constraints.get("destination"):
+                missing.append("điểm đến")
+            if not constraints.get("origin"):
+                missing.append("điểm đi")
+
+            ask_msg = (
+                f"Bạn muốn tìm vé máy bay, nhưng mình cần thêm thông tin:\n\n"
+                f"📌 Thiếu: **{', '.join(missing)}**\n\n"
+                f"Ví dụ: *\"Tìm vé rẻ nhất từ HCM đi Đà Nẵng ngày 15/3\"*\n\n"
+                f"Bạn bổ sung giúp mình nhé!"
+            )
+            print(f"[PLANNER] Missing info: {missing} → asking user")
+
+            from langchain_core.messages import AIMessage
+            return {
+                "messages": [AIMessage(content=ask_msg)],
+                "current_step": "planner",
+            }
+
+        # ── Origin: lưu tên gốc → convert IATA ───────────
         if constraints.get("origin"):
             raw = str(constraints["origin"])
-            # Nếu LLM trả IATA code → lưu tên thật vào name
             if len(raw) == 3 and raw.isupper():
                 constraints["origin_name"] = _iata_to_city(raw)
             else:
                 constraints["origin_name"] = raw
             constraints["origin"] = _to_iata(raw)
 
-        # Destination
+        # ── Destination ───────────────────────────────────
         if constraints.get("destination"):
             raw = str(constraints["destination"])
             if len(raw) == 3 and raw.isupper():
@@ -93,9 +123,9 @@ def planner_node(state: dict) -> dict:
                 constraints["destination_name"] = raw
             constraints["destination"] = _to_iata(raw)
 
-        # Fallback: nếu không có departure_date → dùng ngày mai
+        # ── Fallback date ─────────────────────────────────
         if not constraints.get("departure_date") and any(
-            s in plan_dict.get("steps", []) for s in ["find_flights", "find_hotels"]
+            s in steps for s in ["find_flights", "find_hotels"]
         ):
             tomorrow = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
             constraints["departure_date"] = tomorrow

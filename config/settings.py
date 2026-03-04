@@ -17,6 +17,12 @@ SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
 # ── Makcorps (optional) ─────────────────────────────
 MAKCORPS_API_KEY = os.getenv("MAKCORPS_API_KEY")
 
+# ── OpenWeatherMap ──────────────────────────────────
+OPENWEATHERMAP_API_KEY = os.getenv("OPENWEATHERMAP_API_KEY")
+
+# ── Tavily Search ──────────────────────────────────
+TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
+
 # ── Defaults ─────────────────────────────────────────
 DEFAULT_CURRENCY = "VND"
 MAX_FLEXIBLE_DAYS = 3  # ±3 days for flexible date search

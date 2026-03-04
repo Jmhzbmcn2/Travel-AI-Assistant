@@ -9,7 +9,7 @@ export default function Sidebar({
         <aside className="sidebar">
             {/* Header */}
             <div className="sidebar-header">
-                <div className="sidebar-logo">✈️</div>
+                <div className="sidebar-logo">🤖</div>
                 <span className="sidebar-title">Travel AI</span>
             </div>
 

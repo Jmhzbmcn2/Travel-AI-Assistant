@@ -2,10 +2,10 @@ from src.state.agent_state import AgentState
 
 
 def route_by_intent(state: AgentState) -> str:
-    """Sau classify_intent: travel → parser, follow_up → follow_up, chitchat → chitchat."""
+    """Sau classify_intent: travel → planner, follow_up → follow_up, chitchat → chitchat."""
     intent = state.get("intent", "chitchat")
     if intent == "travel":
-        return "parser"
+        return "planner"
     if intent == "follow_up":
         return "follow_up"
     return "chitchat"

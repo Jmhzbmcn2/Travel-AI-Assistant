@@ -1,6 +1,10 @@
 const API_BASE = '';
 
-export async function sendMessage(message, sessionId, onChunk, onDone, onError) {
+/**
+ * Gửi tin nhắn qua SSE streaming.
+ * Hỗ trợ HITL: khi nhận type "interrupt", gọi onInterrupt callback.
+ */
+export async function sendMessage(message, sessionId, onChunk, onDone, onError, onInterrupt) {
     try {
         const response = await fetch(`${API_BASE}/api/chat/stream`, {
             method: 'POST',
@@ -34,6 +38,11 @@ export async function sendMessage(message, sessionId, onChunk, onDone, onError) 
                         newSessionId = data.session_id;
                     } else if (data.type === 'chunk') {
                         onChunk(data.content);
+                    } else if (data.type === 'interrupt') {
+                        // HITL: graph bị interrupt, cần user xác nhận
+                        if (onInterrupt) {
+                            onInterrupt(data, newSessionId);
+                        }
                     } else if (data.type === 'done') {
                         onDone(newSessionId);
                     } else if (data.type === 'error') {
@@ -41,6 +50,57 @@ export async function sendMessage(message, sessionId, onChunk, onDone, onError) 
                     }
                 } catch {
                     // skip malformed JSON
+                }
+            }
+        }
+    } catch (err) {
+        onError(err.message);
+    }
+}
+
+/**
+ * Resume graph sau khi user xác nhận interrupt.
+ */
+export async function resumeChat(sessionId, response, onChunk, onDone, onError, onInterrupt) {
+    try {
+        const res = await fetch(`${API_BASE}/api/chat/stream/resume`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: sessionId, response }),
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                const jsonStr = line.slice(6).trim();
+                if (!jsonStr) continue;
+
+                try {
+                    const data = JSON.parse(jsonStr);
+                    if (data.type === 'chunk') {
+                        onChunk(data.content);
+                    } else if (data.type === 'interrupt') {
+                        if (onInterrupt) onInterrupt(data, sessionId);
+                    } else if (data.type === 'done') {
+                        onDone(sessionId);
+                    } else if (data.type === 'error') {
+                        onError(data.content);
+                    }
+                } catch {
+                    // skip
                 }
             }
         }

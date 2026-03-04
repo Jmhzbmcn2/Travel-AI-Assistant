@@ -1,23 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import ChatBubble from '../components/ChatBubble';
+import ChatBubble, { InterruptBubble } from '../components/ChatBubble';
 import ChatInput from '../components/ChatInput';
 import TypingIndicator from '../components/TypingIndicator';
 import Sidebar from '../components/Sidebar';
-import { sendMessage, fetchSessions, fetchSessionMessages, deleteSession } from '../services/api';
-
-const SUGGESTIONS = [
-    { emoji: '🛫', text: 'Tìm vé máy bay Hà Nội → Đà Nẵng ngày 20/3' },
-    { emoji: '🏖️', text: 'Bay từ Sài Gòn đi Phú Quốc cuối tuần này' },
-    { emoji: '🏨', text: 'Vé rẻ HCM đi Nha Trang + khách sạn' },
-    { emoji: '👨‍👩‍👧‍👦', text: 'Đặt vé Hà Nội → Đà Lạt cho 2 người' },
-];
-
-const FEATURES = [
-    { icon: '🔍', label: 'Tìm vé rẻ' },
-    { icon: '🏨', label: 'Đặt khách sạn' },
-    { icon: '💰', label: 'So sánh giá' },
-    { icon: '📊', label: 'Xếp hạng deal' },
-];
+import { sendMessage, resumeChat, fetchSessions, fetchSessionMessages, deleteSession } from '../services/api';
 
 export default function ChatPage() {
     const [messages, setMessages] = useState([]);
@@ -25,6 +11,8 @@ export default function ChatPage() {
     const [sessionId, setSessionId] = useState(null);
     const [isStreaming, setIsStreaming] = useState(false);
     const [streamContent, setStreamContent] = useState('');
+    const [interruptData, setInterruptData] = useState(null);
+    const [isResuming, setIsResuming] = useState(false);
     const messagesEndRef = useRef(null);
 
     const scrollToBottom = useCallback(() => {
@@ -33,7 +21,7 @@ export default function ChatPage() {
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages, streamContent, scrollToBottom]);
+    }, [messages, streamContent, interruptData, scrollToBottom]);
 
     useEffect(() => {
         loadSessions();
@@ -46,6 +34,7 @@ export default function ChatPage() {
 
     const handleSelectSession = async (sid) => {
         setSessionId(sid);
+        setInterruptData(null);
         const msgs = await fetchSessionMessages(sid);
         setMessages(msgs);
     };
@@ -53,6 +42,7 @@ export default function ChatPage() {
     const handleNewChat = () => {
         setSessionId(null);
         setMessages([]);
+        setInterruptData(null);
     };
 
     const handleDeleteSession = async (sid) => {
@@ -60,6 +50,7 @@ export default function ChatPage() {
         if (sessionId === sid) {
             setSessionId(null);
             setMessages([]);
+            setInterruptData(null);
         }
         loadSessions();
     };
@@ -69,6 +60,7 @@ export default function ChatPage() {
         setMessages((prev) => [...prev, userMsg]);
         setIsStreaming(true);
         setStreamContent('');
+        setInterruptData(null);
 
         let accumulatedContent = '';
 
@@ -80,10 +72,12 @@ export default function ChatPage() {
                 setStreamContent(accumulatedContent);
             },
             (newSessionId) => {
-                setMessages((prev) => [
-                    ...prev,
-                    { role: 'assistant', content: accumulatedContent },
-                ]);
+                if (accumulatedContent) {
+                    setMessages((prev) => [
+                        ...prev,
+                        { role: 'assistant', content: accumulatedContent },
+                    ]);
+                }
                 setStreamContent('');
                 setIsStreaming(false);
                 setSessionId(newSessionId);
@@ -92,12 +86,82 @@ export default function ChatPage() {
             (err) => {
                 setMessages((prev) => [
                     ...prev,
-                    { role: 'assistant', content: `❌ Lỗi: ${err}` },
+                    { role: 'assistant', content: `Lỗi: ${err}` },
                 ]);
                 setStreamContent('');
                 setIsStreaming(false);
+            },
+            (data, newSessionId) => {
+                setIsStreaming(false);
+                setStreamContent('');
+                setSessionId(newSessionId);
+                setInterruptData(data);
+                loadSessions();
             }
         );
+    };
+
+    const handleConfirm = async (response) => {
+        setIsResuming(true);
+        setInterruptData(null);
+        setIsStreaming(true);
+        setStreamContent('');
+
+        const confirmText = typeof response === 'string' ? response : 'Đã xác nhận';
+        setMessages((prev) => [
+            ...prev,
+            { role: 'assistant', content: interruptData?.content || '' },
+            { role: 'user', content: confirmText === 'ok' ? '✓ Xác nhận' : confirmText },
+        ]);
+
+        let accumulatedContent = '';
+
+        await resumeChat(
+            sessionId,
+            response,
+            (chunk) => {
+                accumulatedContent += chunk;
+                setStreamContent(accumulatedContent);
+            },
+            (sid) => {
+                if (accumulatedContent) {
+                    setMessages((prev) => [
+                        ...prev,
+                        { role: 'assistant', content: accumulatedContent },
+                    ]);
+                }
+                setStreamContent('');
+                setIsStreaming(false);
+                setIsResuming(false);
+                loadSessions();
+            },
+            (err) => {
+                setMessages((prev) => [
+                    ...prev,
+                    { role: 'assistant', content: `Lỗi: ${err}` },
+                ]);
+                setStreamContent('');
+                setIsStreaming(false);
+                setIsResuming(false);
+            },
+            (data, sid) => {
+                setIsStreaming(false);
+                setStreamContent('');
+                setIsResuming(false);
+                setInterruptData(data);
+            }
+        );
+    };
+
+    const handleModify = () => {
+        // Abandon interrupted graph → new session, let user retype
+        const planMessage = interruptData?.content || '';
+        setInterruptData(null);
+        setSessionId(null); // new session → graph starts fresh
+        setMessages((prev) => [
+            ...prev,
+            { role: 'assistant', content: planMessage + '\n\n✎ *Kế hoạch đã bị hủy. Hãy nhập yêu cầu mới hoặc sửa lại yêu cầu trước.*' },
+        ]);
     };
 
     const showWelcome = messages.length === 0 && !isStreaming;
@@ -115,54 +179,36 @@ export default function ChatPage() {
             <main className="chat-area">
                 {/* Header */}
                 <div className="chat-header">
-                    <div className="chat-header-icon">✈️</div>
                     <div className="chat-header-info">
                         <h2>Travel AI Assistant</h2>
-                        <span>Tìm vé máy bay & khách sạn giá tốt nhất</span>
+                        <span>Trợ lý du lịch thông minh</span>
                     </div>
-                    <span className="chat-header-badge">⚡ Gemini</span>
                 </div>
 
                 {/* Messages */}
                 <div className="messages-container">
                     {showWelcome ? (
                         <div className="welcome-screen">
-                            <div className="welcome-icon-wrapper">
-                                <div className="welcome-icon">🌏</div>
-                            </div>
-                            <h1 className="welcome-title">Xin chào! Bạn muốn đi đâu?</h1>
+                            <h1 className="welcome-title">Chào bạn, tôi có thể giúp gì?</h1>
                             <p className="welcome-sub">
-                                Tôi giúp bạn tìm vé máy bay giá rẻ, khách sạn tốt nhất
-                                và so sánh các deal hấp dẫn nhất cho chuyến đi.
+                                Hãy nhập câu hỏi hoặc yêu cầu của bạn để bắt đầu.
                             </p>
-
-                            <div className="welcome-features">
-                                {FEATURES.map((f, i) => (
-                                    <div key={i} className="feature-item">
-                                        <span className="feature-icon">{f.icon}</span>
-                                        {f.label}
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="welcome-suggestions">
-                                {SUGGESTIONS.map((s, i) => (
-                                    <button
-                                        key={i}
-                                        className="suggestion-chip"
-                                        onClick={() => handleSend(s.text)}
-                                    >
-                                        <span className="suggestion-emoji">{s.emoji}</span>
-                                        <span className="suggestion-text">{s.text}</span>
-                                    </button>
-                                ))}
-                            </div>
                         </div>
                     ) : (
                         <>
                             {messages.map((msg, i) => (
                                 <ChatBubble key={i} role={msg.role} content={msg.content} />
                             ))}
+
+                            {interruptData && (
+                                <InterruptBubble
+                                    message={interruptData.content || 'Xác nhận?'}
+                                    onConfirm={handleConfirm}
+                                    onModify={handleModify}
+                                    disabled={isResuming}
+                                />
+                            )}
+
                             {isStreaming && streamContent && (
                                 <ChatBubble role="assistant" content={streamContent} />
                             )}
@@ -173,7 +219,7 @@ export default function ChatPage() {
                 </div>
 
                 {/* Input */}
-                <ChatInput onSend={handleSend} disabled={isStreaming} />
+                <ChatInput onSend={handleSend} disabled={isStreaming || !!interruptData} />
             </main>
         </div>
     );

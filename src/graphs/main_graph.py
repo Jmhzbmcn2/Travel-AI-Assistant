@@ -1,51 +1,115 @@
+"""
+Main Graph — Multi-Agent Supervisor architecture + Checkpointer + HITL.
+
+HITL: interrupt_before trên human_confirm node — user xác nhận plan
+      trước khi supervisor dispatch agents.
+
+Flow:
+  classify_intent
+    ├── chitchat    → END
+    ├── follow_up   → END
+    └── travel      → planner → [INTERRUPT] human_confirm → supervisor ─┬→ ...agents...
+                                                                         ├→ reflect → supervisor/respond
+                                                                         └→ respond → END
+"""
 from src.state.agent_state import AgentState
 from src.nodes.classify_intent_node import classify_intent_node
-from src.nodes.parser_node import parser_node
-from src.nodes.search_node import search_node
-from src.nodes.ranker_node import ranker_node
-from src.nodes.response_node import response_node
-from src.nodes.ask_user_node import ask_user_node
 from src.nodes.chitchat_node import chitchat_node
 from src.nodes.follow_up_node import follow_up_node
-from src.edges.routing_edges import route_by_intent, should_search_or_ask
-from langgraph.graph import StateGraph, END
 
+# Multi-agent imports
+from src.agents.planner_agent import planner_node
+from src.agents.supervisor import supervisor_node, route_supervisor
+from src.agents.flight_agent import flight_agent_node
+from src.agents.hotel_agent import hotel_agent_node
+from src.agents.weather_agent import weather_agent_node
+from src.agents.info_agent import info_agent_node
+from src.agents.reflection import reflection_node, route_after_reflection
+from src.agents.response_agent import response_agent_node
+
+from src.edges.routing_edges import route_by_intent
+from langgraph.graph import StateGraph, END
+from langgraph.checkpoint.memory import MemorySaver
+
+# ── Build graph ───────────────────────────────────────
 graph = StateGraph(AgentState)
 
-# Nodes
+
+# ── Human confirm node (HITL gate) ────────────────────
+def human_confirm_node(state: dict) -> dict:
+    """Gate node: chỉ chạy 1 lần sau planner.
+    interrupt_before sẽ dừng TRƯỚC node này → user confirm
+    Khi resume, node này pass-through → tiếp tục tới supervisor.
+    """
+    print("[HUMAN_CONFIRM] User confirmed plan. Proceeding to supervisor.")
+    return {}
+
+
+# Nodes — shared
 graph.add_node("classify_intent", classify_intent_node)
-graph.add_node("parser", parser_node)
-graph.add_node("search", search_node)
-graph.add_node("ranker", ranker_node)
-graph.add_node("response", response_node)
-graph.add_node("ask_user", ask_user_node)
 graph.add_node("chitchat", chitchat_node)
 graph.add_node("follow_up", follow_up_node)
 
-# Entry point → intent classifier
+# Nodes — multi-agent
+graph.add_node("planner", planner_node)
+graph.add_node("human_confirm", human_confirm_node)  # HITL gate
+graph.add_node("supervisor", supervisor_node)
+graph.add_node("flight_agent", flight_agent_node)
+graph.add_node("hotel_agent", hotel_agent_node)
+graph.add_node("weather_agent", weather_agent_node)
+graph.add_node("info_agent", info_agent_node)
+graph.add_node("reflect", reflection_node)
+graph.add_node("respond", response_agent_node)
+
+# ── Entry point ───────────────────────────────────────
 graph.set_entry_point("classify_intent")
 
-# Intent routing: travel → parser, follow_up → follow_up, chitchat → chitchat
+# ── Intent routing ────────────────────────────────────
 graph.add_conditional_edges(
     "classify_intent",
     route_by_intent,
-    ["parser", "follow_up", "chitchat"]
+    ["planner", "follow_up", "chitchat"],
 )
 
-# Chitchat → END, Follow-up → END
+# ── Simple flows → END ───────────────────────────────
 graph.add_edge("chitchat", END)
 graph.add_edge("follow_up", END)
 
-# Parser routing: đủ info → search, thiếu → ask_user
-graph.add_conditional_edges(
-    "parser",
-    should_search_or_ask,
-    ["search", "ask_user"]
+# ── Multi-agent flow ─────────────────────────────────
+# Planner → Human Confirm (HITL gate) → Supervisor
+graph.add_edge("planner", "human_confirm")
+graph.add_edge("human_confirm", "supervisor")
+
+# Supervisor → routes to agents / reflect / respond
+graph.add_conditional_edges("supervisor", route_supervisor, {
+    "flight_agent": "flight_agent",
+    "hotel_agent": "hotel_agent",
+    "weather_agent": "weather_agent",
+    "info_agent": "info_agent",
+    "reflect": "reflect",
+    "respond": "respond",
+})
+
+# Agents → back to Supervisor (loop, NO interrupt)
+graph.add_edge("flight_agent", "supervisor")
+graph.add_edge("hotel_agent", "supervisor")
+graph.add_edge("weather_agent", "supervisor")
+graph.add_edge("info_agent", "supervisor")
+
+# Reflection → Supervisor (needs fix) OR Respond (OK)
+graph.add_conditional_edges("reflect", route_after_reflection, {
+    "supervisor": "supervisor",
+    "respond": "respond",
+})
+
+# Respond → END
+graph.add_edge("respond", END)
+
+# ── Compile with Checkpointer + HITL ─────────────────
+# interrupt_before=["human_confirm"]: chỉ dừng 1 lần
+# (planner → STOP → user confirm → human_confirm → supervisor → agents...)
+memory = MemorySaver()
+travel_agent = graph.compile(
+    checkpointer=memory,
+    interrupt_before=["human_confirm"],
 )
-
-graph.add_edge("ask_user", END)
-graph.add_edge("search", "ranker")
-graph.add_edge("ranker", "response")
-graph.add_edge("response", END)
-
-travel_agent = graph.compile()

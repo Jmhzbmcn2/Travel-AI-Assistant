@@ -46,3 +46,26 @@ CITY_IATA = {
     "cà mau": "CAH",
     "đồng hới": "VDH",
 }
+
+# ── IATA code → City name (reverse lookup) ────────
+IATA_CITY = {
+    "SGN": "Hồ Chí Minh",
+    "HAN": "Hà Nội",
+    "DAD": "Đà Nẵng",
+    "CXR": "Nha Trang",
+    "PQC": "Phú Quốc",
+    "DLI": "Đà Lạt",
+    "HUI": "Huế",
+    "UIH": "Quy Nhơn",
+    "VCA": "Cần Thơ",
+    "HPH": "Hải Phòng",
+    "BMV": "Buôn Ma Thuột",
+    "VII": "Vinh",
+    "THD": "Thanh Hóa",
+    "PXU": "Pleiku",
+    "VCS": "Côn Đảo",
+    "TBB": "Tuy Hòa",
+    "VKG": "Rạch Giá",
+    "CAH": "Cà Mau",
+    "VDH": "Đồng Hới",
+}

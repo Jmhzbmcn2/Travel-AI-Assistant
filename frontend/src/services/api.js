@@ -6,7 +6,7 @@ const API_BASE = '';
  */
 export async function sendMessage(message, sessionId, onChunk, onDone, onError, onInterrupt) {
     try {
-        const response = await fetch(`${API_BASE}/api/chat/stream`, {
+        const response = await fetch(`${API_BASE}/api/v1/chat/stream`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ message, session_id: sessionId }),
@@ -63,7 +63,7 @@ export async function sendMessage(message, sessionId, onChunk, onDone, onError, 
  */
 export async function resumeChat(sessionId, response, onChunk, onDone, onError, onInterrupt) {
     try {
-        const res = await fetch(`${API_BASE}/api/chat/stream/resume`, {
+        const res = await fetch(`${API_BASE}/api/v1/chat/stream/resume`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ session_id: sessionId, response }),
@@ -110,18 +110,18 @@ export async function resumeChat(sessionId, response, onChunk, onDone, onError, 
 }
 
 export async function fetchSessions() {
-    const res = await fetch(`${API_BASE}/api/sessions`);
+    const res = await fetch(`${API_BASE}/api/v1/sessions`);
     if (!res.ok) return [];
     return res.json();
 }
 
 export async function fetchSessionMessages(sessionId) {
-    const res = await fetch(`${API_BASE}/api/sessions/${sessionId}`);
+    const res = await fetch(`${API_BASE}/api/v1/sessions/${sessionId}`);
     if (!res.ok) return [];
     const data = await res.json();
     return data.messages || [];
 }
 
 export async function deleteSession(sessionId) {
-    await fetch(`${API_BASE}/api/sessions/${sessionId}`, { method: 'DELETE' });
+    await fetch(`${API_BASE}/api/v1/sessions/${sessionId}`, { method: 'DELETE' });
 }

@@ -176,7 +176,7 @@ TAVILY_API_KEY=your_tavily_key
 
 ```bash
 # Terminal 1 — Backend
-uvicorn api:app --reload --port 8000
+uvicorn backend.main:app --reload --port 8000
 
 # Terminal 2 — Frontend
 cd frontend && npm run dev

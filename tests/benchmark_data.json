@@ -1,0 +1,184 @@
+[
+  {
+    "id": "dom-01", "type": "domestic",
+    "origin": "TP.HCM", "destination": "Đà Nẵng", "departure_date": "2026-10-01", "return_date": "2026-10-03",
+    "days": 3, "travelers": 2, "budget_total": 12000000,
+    "expected_status": "recommended", "expected_warnings": []
+  },
+  {
+    "id": "dom-02", "type": "domestic",
+    "origin": "Hà Nội", "destination": "Phú Quốc", "departure_date": "2026-11-01", "return_date": "2026-11-05",
+    "days": 5, "travelers": 4, "budget_total": 40000000,
+    "expected_status": "recommended", "expected_warnings": []
+  },
+  {
+    "id": "dom-03", "type": "domestic",
+    "origin": "TP.HCM", "destination": "Nha Trang", "departure_date": "2026-09-10", "return_date": null,
+    "days": 2, "travelers": 1, "budget_total": 5000000,
+    "expected_status": "recommended", "expected_warnings": []
+  },
+  {
+    "id": "dom-04", "type": "domestic",
+    "origin": "Hà Nội", "destination": "Đà Lạt", "departure_date": "2026-12-01", "return_date": "2026-12-04",
+    "days": 4, "travelers": 2, "budget_total": 15000000,
+    "expected_status": "recommended", "expected_warnings": []
+  },
+  {
+    "id": "dom-05", "type": "domestic",
+    "origin": "Đà Nẵng", "destination": "Hà Nội", "departure_date": "2026-08-15", "return_date": "2026-08-18",
+    "days": 3, "travelers": 3, "budget_total": 20000000,
+    "expected_status": "recommended", "expected_warnings": []
+  },
+  {
+    "id": "dom-06", "type": "domestic",
+    "origin": "Hải Phòng", "destination": "Đà Nẵng", "departure_date": "2026-07-20", "return_date": null,
+    "days": 4, "travelers": 2, "budget_total": 14000000,
+    "expected_status": "recommended", "expected_warnings": []
+  },
+  {
+    "id": "dom-07", "type": "domestic",
+    "origin": "Cần Thơ", "destination": "Phú Quốc", "departure_date": "2026-06-25", "return_date": "2026-06-27",
+    "days": 3, "travelers": 5, "budget_total": 25000000,
+    "expected_status": "recommended", "expected_warnings": []
+  },
+  {
+    "id": "dom-08", "type": "domestic",
+    "origin": "TP.HCM", "destination": "Quy Nhơn", "departure_date": "2026-05-10", "return_date": "2026-05-13",
+    "days": 4, "travelers": 2, "budget_total": 12000000,
+    "expected_status": "recommended", "expected_warnings": []
+  },
+  {
+    "id": "dom-09", "type": "domestic",
+    "origin": "Hà Nội", "destination": "Huế", "departure_date": "2026-04-05", "return_date": "2026-04-08",
+    "days": 4, "travelers": 2, "budget_total": 11000000,
+    "expected_status": "recommended", "expected_warnings": []
+  },
+  {
+    "id": "dom-10", "type": "domestic",
+    "origin": "Đà Lạt", "destination": "TP.HCM", "departure_date": "2026-03-12", "return_date": "2026-03-14",
+    "days": 3, "travelers": 1, "budget_total": 6000000,
+    "expected_status": "recommended", "expected_warnings": []
+  },
+  {
+    "id": "dom-11", "type": "domestic",
+    "origin": "Nha Trang", "destination": "Hà Nội", "departure_date": "2026-02-18", "return_date": "2026-02-21",
+    "days": 4, "travelers": 2, "budget_total": 13000000,
+    "expected_status": "recommended", "expected_warnings": []
+  },
+  {
+    "id": "dom-12", "type": "domestic",
+    "origin": "Phú Quốc", "destination": "TP.HCM", "departure_date": "2026-01-20", "return_date": "2026-01-23",
+    "days": 4, "travelers": 2, "budget_total": 15000000,
+    "expected_status": "recommended", "expected_warnings": []
+  },
+  {
+    "id": "dom-13", "type": "domestic",
+    "origin": "Vinh", "destination": "Đà Lạt", "departure_date": "2026-11-15", "return_date": "2026-11-19",
+    "days": 5, "travelers": 2, "budget_total": 16000000,
+    "expected_status": "recommended", "expected_warnings": []
+  },
+  {
+    "id": "dom-14", "type": "domestic",
+    "origin": "Huế", "destination": "Hà Nội", "departure_date": "2026-10-10", "return_date": null,
+    "days": 2, "travelers": 1, "budget_total": 4000000,
+    "expected_status": "recommended", "expected_warnings": []
+  },
+  {
+    "id": "dom-15", "type": "domestic",
+    "origin": "Hà Nội", "destination": "Đồng Hới", "departure_date": "2026-09-05", "return_date": "2026-09-08",
+    "days": 4, "travelers": 2, "budget_total": 10000000,
+    "expected_status": "recommended", "expected_warnings": []
+  },
+  {
+    "id": "dom-16", "type": "domestic",
+    "origin": "TP.HCM", "destination": "Chu Lai", "departure_date": "2026-08-01", "return_date": "2026-08-03",
+    "days": 3, "travelers": 2, "budget_total": 8000000,
+    "expected_status": "recommended", "expected_warnings": []
+  },
+  {
+    "id": "dom-17", "type": "domestic",
+    "origin": "Đà Nẵng", "destination": "Đà Lạt", "departure_date": "2026-07-15", "return_date": "2026-07-18",
+    "days": 4, "travelers": 2, "budget_total": 12000000,
+    "expected_status": "recommended", "expected_warnings": []
+  },
+  {
+    "id": "dom-18", "type": "domestic",
+    "origin": "Hà Nội", "destination": "Quy Nhơn", "departure_date": "2026-06-10", "return_date": "2026-06-14",
+    "days": 5, "travelers": 3, "budget_total": 21000000,
+    "expected_status": "recommended", "expected_warnings": []
+  },
+  {
+    "id": "dom-19", "type": "domestic",
+    "origin": "TP.HCM", "destination": "Buôn Ma Thuột", "departure_date": "2026-05-05", "return_date": "2026-05-07",
+    "days": 3, "travelers": 2, "budget_total": 7000000,
+    "expected_status": "recommended", "expected_warnings": []
+  },
+  {
+    "id": "dom-20", "type": "domestic",
+    "origin": "Nha Trang", "destination": "Đà Nẵng", "departure_date": "2026-04-20", "return_date": "2026-04-23",
+    "days": 4, "travelers": 2, "budget_total": 11000000,
+    "expected_status": "recommended", "expected_warnings": []
+  },
+
+  {
+    "id": "ins-01", "type": "insufficient",
+    "origin": "TP.HCM", "destination": "NoFlightCity", "departure_date": "2026-10-01", "return_date": null,
+    "days": 3, "travelers": 2, "budget_total": 10000000,
+    "expected_status": "insufficient_data", "expected_warnings": ["chuyến bay"]
+  },
+  {
+    "id": "ins-02", "type": "insufficient",
+    "origin": "Hà Nội", "destination": "NoHotelCity", "departure_date": "2026-11-01", "return_date": null,
+    "days": 3, "travelers": 2, "budget_total": 10000000,
+    "expected_status": "insufficient_data", "expected_warnings": ["khách sạn"]
+  },
+  {
+    "id": "ins-03", "type": "insufficient",
+    "origin": "NoFlightCity", "destination": "Đà Lạt", "departure_date": "2026-12-01", "return_date": "2026-12-05",
+    "days": 5, "travelers": 2, "budget_total": 15000000,
+    "expected_status": "insufficient_data", "expected_warnings": ["chuyến bay"]
+  },
+  {
+    "id": "ins-04", "type": "insufficient",
+    "origin": "Đà Nẵng", "destination": "NoHotelCity", "departure_date": "2026-09-10", "return_date": "2026-09-15",
+    "days": 6, "travelers": 4, "budget_total": 30000000,
+    "expected_status": "insufficient_data", "expected_warnings": ["khách sạn"]
+  },
+  {
+    "id": "ins-05", "type": "insufficient",
+    "origin": "NoFlightCity", "destination": "NoHotelCity", "departure_date": "2026-08-01", "return_date": null,
+    "days": 3, "travelers": 1, "budget_total": 5000000,
+    "expected_status": "insufficient_data", "expected_warnings": ["chuyến bay", "khách sạn"]
+  },
+
+  {
+    "id": "uns-01", "type": "unsupported",
+    "origin": "TP.HCM", "destination": "Đà Nẵng", "departure_date": "2026-10-01", "return_date": null,
+    "days": 3, "travelers": 2, "budget_total": 50000,
+    "expected_status": "needs_revision", "expected_warnings": ["budget_tight"]
+  },
+  {
+    "id": "uns-02", "type": "unsupported",
+    "origin": "Hà Nội", "destination": "Tokyo", "departure_date": "2026-11-01", "return_date": "2026-11-10",
+    "days": 10, "travelers": 2, "budget_total": 80000000,
+    "expected_status": "insufficient_data", "expected_warnings": ["ngoài phạm vi"]
+  },
+  {
+    "id": "uns-03", "type": "unsupported",
+    "origin": "Đà Nẵng", "destination": "Bangkok", "departure_date": "2026-12-01", "return_date": "2026-12-04",
+    "days": 4, "travelers": 2, "budget_total": 15000000,
+    "expected_status": "insufficient_data", "expected_warnings": ["ngoài phạm vi"]
+  },
+  {
+    "id": "uns-04", "type": "unsupported",
+    "origin": "TP.HCM", "destination": "Phú Quốc", "departure_date": "2026-09-10", "return_date": "2026-09-15",
+    "days": 6, "travelers": 4, "budget_total": 1000000,
+    "expected_status": "needs_revision", "expected_warnings": ["budget_tight"]
+  },
+  {
+    "id": "uns-05", "type": "unsupported",
+    "origin": "New York", "destination": "Hà Nội", "departure_date": "2026-08-01", "return_date": "2026-08-10",
+    "days": 10, "travelers": 1, "budget_total": 50000000,
+    "expected_status": "insufficient_data", "expected_warnings": ["ngoài phạm vi"]
+  }
+]

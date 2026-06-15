@@ -47,6 +47,7 @@ yarn-error.log*
 # ── LangGraph / Checkpoints ─────────────
 checkpoints/
 *.sqlite
+*.sqlite-*
 *.db
 
 # ── Jupyter ──────────────────────────────
@@ -59,5 +60,6 @@ logs/
 
 # ── Misc ─────────────────────────────────
 .pytest_cache/
+pytest-cache-files-*/
 .coverage
 htmlcov/

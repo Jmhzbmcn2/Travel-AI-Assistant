@@ -1,0 +1,6 @@
+#!/bin/sh
+if command -v pwsh >/dev/null 2>&1; then
+  pwsh -NoProfile -ExecutionPolicy Bypass -File project-hooks/pre-commit.ps1
+else
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File project-hooks/pre-commit.ps1
+fi

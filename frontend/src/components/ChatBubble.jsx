@@ -1,11 +1,15 @@
 export default function ChatBubble({ role, content }) {
+    const isAssistant = role === 'assistant';
+
     return (
         <div className={`bubble-row ${role}`}>
             <div className={`bubble-avatar ${role}`}>
-                {role === 'assistant' ? '🤖' : '👤'}
+                <span className={`material-symbols-outlined ${isAssistant ? 'icon-fill' : ''}`}>
+                    {isAssistant ? 'smart_toy' : 'person'}
+                </span>
             </div>
             <div className={`bubble ${role}`}>
-                {role === 'assistant' ? (
+                {isAssistant ? (
                     <div className="md-content" dangerouslySetInnerHTML={{ __html: formatMarkdown(content) }} />
                 ) : (
                     <span>{content}</span>
@@ -15,30 +19,27 @@ export default function ChatBubble({ role, content }) {
     );
 }
 
-/**
- * Interrupt confirmation bubble — hiện khi graph bị interrupt.
- */
 export function InterruptBubble({ message, onConfirm, onModify, disabled }) {
     return (
         <div className="bubble-row assistant">
-            <div className="bubble-avatar assistant">🤖</div>
-            <div className="bubble assistant interrupt-bubble">
-                <div className="md-content" dangerouslySetInnerHTML={{ __html: formatMarkdown(message) }} />
-                <div className="interrupt-actions">
-                    <button
-                        className="interrupt-btn confirm"
-                        onClick={() => onConfirm("ok")}
-                        disabled={disabled}
-                    >
-                        ✓ Xác nhận
-                    </button>
-                    <button
-                        className="interrupt-btn modify"
-                        onClick={onModify}
-                        disabled={disabled}
-                    >
-                        ✎ Thay đổi
-                    </button>
+            <div className="bubble-avatar assistant">
+                <span className="material-symbols-outlined icon-fill">smart_toy</span>
+            </div>
+            <div className="assistant-stack">
+                <div className="bubble assistant">
+                    <div className="md-content" dangerouslySetInnerHTML={{ __html: formatMarkdown(message) }} />
+                </div>
+                <div className="interrupt-card">
+                    <h3>Xác nhận bản nháp kế hoạch?</h3>
+                    <p>Bạn có thể điều chỉnh thêm ở bảng chi tiết bên phải.</p>
+                    <div className="interrupt-actions">
+                        <button className="interrupt-btn confirm" type="button" onClick={() => onConfirm('ok')} disabled={disabled}>
+                            Xác nhận
+                        </button>
+                        <button className="interrupt-btn modify" type="button" onClick={onModify} disabled={disabled}>
+                            Thay đổi
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,4 +1,9 @@
-from src.graphs.main_graph import travel_agent
+from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
+
+from travel_ai_agent.graphs.main_graph import travel_agent
 
 while True:
     user_input = input("Bạn: ")

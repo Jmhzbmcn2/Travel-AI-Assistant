@@ -17,54 +17,53 @@ The current product direction is not "another generic travel chatbot". The goal 
 
 ```text
 Travel AI Agent/
-  AGENTS.md
-  docs/
-  checklists/
-  decisions/
-  prompts/
-  .agents/skills/
-  src/travel_ai_agent/
-    api/
-      main.py
-      dependencies.py
-      routers/
-      schemas/
-      services/
-      utils/
-    agents/
-    config/
-    edges/
-    graphs/
-    nodes/
-    services/
-    state/
-    tools/
-  frontend/
-  Dockerfile.backend
+  AGENTS.md              # agent harness entrypoint
+  README.md
+  main.py                # dev REPL only (not the ASGI app)
+  requirements.txt       # backend deps (source of truth)
+  pyproject.toml         # pytest config
+  Dockerfile             # backend image
   docker-compose.yml
-  requirements.txt
-  main.py
+  docs/                  # product + planning docs
+  .agents/skills/        # agent skills + references
+  frontend/              # React 19 + Vite app
+    src/{components,lib,pages,services}/
+  src/travel_ai_agent/   # Python package (import root)
+    api/
+      main.py            # FastAPI app factory
+      dependencies.py
+      routers/           # chat, sessions, trips, auth, analytics, health
+      schemas/           # request/response DTOs
+      services/          # chat_service, session_store, auth_service, trip_service
+    graphs/main_graph.py # LangGraph topology (5 nodes)
+    nodes/               # classify_intent, chitchat, planner, decision, respond
+    edges/               # routing functions
+    state/               # AgentState TypedDict
+    decision/            # deterministic engine: cost, coverage, itinerary, actions
+    providers/           # SerpAPI / OpenWeatherMap / Tavily gateway + normalizers
+    core/                # guardrails, llm_service
+    config/              # settings, constants, prompts
+    schemas/             # domain models (TripPlan, DecisionOutput, ...)
+    tools/               # provider tool wrappers
 ```
 
 ## Backend Flow
 
 ```text
 User message
--> classify_intent
--> planner
--> HITL plan confirmation
--> supervisor
--> flight/hotel/weather/info agents
--> reflection
--> response
+-> classify_intent ─┬─ chitchat  -> END        (non-travel)
+                    └─ planner                  (travel / follow-up)
+   planner ─┬─ END          (missing required fields -> ask user)
+            └─ decision      (fetch flights‖hotels + places/routes/weather, run Decision Engine)
+   decision -> respond -> END + workspace payload
 ```
 
 Important runtime behavior:
 
-- FastAPI endpoints live under `src/travel_ai_agent/api`.
-- The compiled graph lives in `src/travel_ai_agent/graphs/main_graph.py`.
-- HITL resume depends on `thread_id=session_id`.
-- SSE event types are `session`, `chunk`, `interrupt`, `done`, and `error`.
+- FastAPI endpoints live under `src/travel_ai_agent/api`. The uncompiled graph is `graphs/main_graph.py`; it is compiled with a checkpointer in `api/dependencies.py`.
+- One LLM call per travel turn (`planner`); `respond` is a deterministic template.
+- Graph state keys on `thread_id == session_id`.
+- SSE event types: `session`, `status`, `chunk`, `done`, `error`.
 
 ## Setup
 

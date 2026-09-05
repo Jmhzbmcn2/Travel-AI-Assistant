@@ -63,3 +63,8 @@ logs/
 pytest-cache-files-*/
 .coverage
 htmlcov/
+run-logs/
+checkpoints/
+seed_sid.txt
+data/*.sqlite
+data/*.sqlite-*

@@ -9,8 +9,6 @@ from typing import Any
 from langchain_core.messages import HumanMessage
 from langgraph.graph.state import CompiledStateGraph
 
-from travel_ai_agent.api.utils.plan_builder import build_plan_message
-
 
 def get_graph_config(sid: str) -> dict:
     """Tạo config cho graph invocation với thread_id."""
@@ -23,27 +21,15 @@ def build_graph_input(message: str, sid: str) -> dict:
 
 
 async def process_graph_result(graph: CompiledStateGraph, sid: str) -> dict:
-    """Xử lý kết quả từ graph: normal completion hoặc interrupt."""
+    """Đọc kết quả cuối từ graph state (không còn interrupt trong luồng MVP)."""
     snapshot = await graph.aget_state(get_graph_config(sid))
-
-    if snapshot.next:
-        # Graph bị interrupt_before — đọc plan từ state
-        state_values = snapshot.values or {}
-        plan = state_values.get("plan", {})
-        message = build_plan_message(plan)
-
-        return {
-            "type": "interrupt",
-            "data": {"plan": plan, "type": "plan_confirmation"},
-            "message": message,
-            "waiting_for": list(snapshot.next),
-        }
-
-    # Normal completion — lấy AI message cuối cùng
+    state_values = snapshot.values or {}
     return {
         "type": "done",
         "message": "",
-        "decision": (snapshot.values or {}).get("decision_output"),
+        "decision": state_values.get("decision_output"),
+        "plan": state_values.get("plan"),
+        "plan_draft": state_values.get("plan_draft"),
     }
 
 

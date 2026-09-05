@@ -1,10 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import ChatBubble, { InterruptBubble } from '../components/ChatBubble';
-import ChatInput from '../components/ChatInput';
+import { useCallback, useEffect, useState } from 'react';
 import Sidebar from '../components/Sidebar';
-import TripWorkspace from '../components/TripWorkspace';
-import TypingIndicator from '../components/TypingIndicator';
-import { deleteSession, renameSession, fetchSessionMessages, fetchSessions, fetchTrip, patchTripPlan, resumeChat, sendMessage, executeTripAction } from '../services/api';
+import ChatPane from '../components/ChatPane';
+import Workspace from '../components/Workspace';
+import { Icon } from '../lib/ui';
+import {
+    deleteSession, executeTripAction, fetchSessionMessages, fetchSessions,
+    fetchTrip, patchTripPlan, renameSession, sendMessage,
+} from '../services/api';
+
+const STATUS_PILL = {
+    empty: { label: 'Nháp', color: 'var(--line-2)' },
+    draft: { label: 'Bản nháp', color: 'var(--warn)' },
+    decided: { label: 'Đã có kết quả', color: 'var(--ok)' },
+};
 
 export default function ChatPage() {
     const [messages, setMessages] = useState([]);
@@ -12,197 +20,133 @@ export default function ChatPage() {
     const [sessionId, setSessionId] = useState(null);
     const [isStreaming, setIsStreaming] = useState(false);
     const [streamContent, setStreamContent] = useState('');
-    const [interruptData, setInterruptData] = useState(null);
-    const [isResuming, setIsResuming] = useState(false);
-    const [workspace, setWorkspace] = useState(null);
-    const [editingPlan, setEditingPlan] = useState(false);
-    const [savingPlan, setSavingPlan] = useState(false);
-    const [isWorkspaceCollapsed, setIsWorkspaceCollapsed] = useState(false);
     const [agentStatus, setAgentStatus] = useState('');
+    const [workspace, setWorkspace] = useState(null);
+    const [savingPlan, setSavingPlan] = useState(false);
+    const [wsCollapsed, setWsCollapsed] = useState(false);
     const [loadingAction, setLoadingAction] = useState(null);
-    const messagesEndRef = useRef(null);
+    const [workspaceError, setWorkspaceError] = useState('');
+    const [isWorkspaceLoading, setIsWorkspaceLoading] = useState(false);
+    const [actionDiff, setActionDiff] = useState('');
+    const [wsTab, setWsTab] = useState('overview');
+    const [editingPlan, setEditingPlan] = useState(false);
 
-    const scrollToBottom = useCallback(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const [theme, setTheme] = useState(() => {
+        const q = new URLSearchParams(window.location.search).get('theme');
+        if (q === 'dark' || q === 'light') return q;
+        try { return localStorage.getItem('theme'); } catch { return null; }
+    });
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [isNarrow, setIsNarrow] = useState(false);
+    const [mobileTab, setMobileTab] = useState('chat');
+
+    useEffect(() => {
+        const root = document.documentElement;
+        if (theme) root.dataset.theme = theme; else delete root.dataset.theme;
+        try { theme ? localStorage.setItem('theme', theme) : localStorage.removeItem('theme'); } catch { /* ignore */ }
+    }, [theme]);
+
+    useEffect(() => {
+        const mq = window.matchMedia('(max-width: 860px)');
+        const on = (e) => setIsNarrow(e.matches);
+        setIsNarrow(mq.matches);
+        mq.addEventListener('change', on);
+        return () => mq.removeEventListener('change', on);
     }, []);
 
-    const loadSessions = useCallback(async () => {
-        const data = await fetchSessions();
-        setSessions(data);
-    }, []);
+    const loadSessions = useCallback(async () => setSessions(await fetchSessions()), []);
 
     const loadWorkspace = useCallback(async (sid) => {
-        setWorkspace(await fetchTrip(sid));
+        if (!sid) return;
+        setIsWorkspaceLoading(true);
+        setWorkspaceError('');
+        try {
+            setWorkspace(await fetchTrip(sid));
+        } catch (e) {
+            setWorkspaceError(`Không tải được workspace: ${e.message}`);
+        } finally {
+            setIsWorkspaceLoading(false);
+        }
     }, []);
 
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages, streamContent, interruptData, scrollToBottom]);
+    useEffect(() => { loadSessions(); }, [loadSessions]);
 
     useEffect(() => {
-        const timer = window.setTimeout(() => {
-            loadSessions();
-        }, 0);
-        return () => window.clearTimeout(timer);
-    }, [loadSessions]);
+        const sid = new URLSearchParams(window.location.search).get('session');
+        if (sid) handleSelectSession(sid);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const resetConversation = () => {
+        setSessionId(null);
+        setMessages([]);
+        setStreamContent('');
+        setWorkspace(null);
+        setWorkspaceError('');
+        setActionDiff('');
+        setMobileTab('chat');
+        setWsTab('overview');
+        setEditingPlan(false);
+    };
 
     const handleSelectSession = async (sid) => {
         setSessionId(sid);
-        setInterruptData(null);
-        const msgs = await fetchSessionMessages(sid);
-        setMessages(msgs);
-        loadWorkspace(sid);
-    };
-
-    const handleNewChat = () => {
-        setSessionId(null);
-        setMessages([]);
-        setInterruptData(null);
-        setStreamContent('');
-        setWorkspace(null);
+        setWorkspaceError('');
+        setActionDiff('');
+        setWsTab('overview');
         setEditingPlan(false);
+        setMessages(await fetchSessionMessages(sid));
+        loadWorkspace(sid);
     };
 
     const handleDeleteSession = async (sid) => {
         await deleteSession(sid);
-        if (sessionId === sid) {
-            setSessionId(null);
-            setMessages([]);
-            setInterruptData(null);
-            setStreamContent('');
-        }
+        if (sessionId === sid) resetConversation();
         loadSessions();
     };
 
     const handleRenameSession = async (sid, title) => {
-        try {
-            await renameSession(sid, title);
-            loadSessions();
-        } catch (error) {
-            setMessages((prev) => [...prev, { role: 'assistant', content: `Lỗi đổi tên cuộc hội thoại: ${error.message}` }]);
-        }
+        try { await renameSession(sid, title); loadSessions(); }
+        catch (e) { setWorkspaceError(`Lỗi đổi tên: ${e.message}`); }
     };
 
     const handleSend = async (text) => {
-        const userMsg = { role: 'user', content: text };
-        setMessages((prev) => [...prev, userMsg]);
+        setMessages((prev) => [...prev, { role: 'user', content: text }]);
         setIsStreaming(true);
         setStreamContent('');
-        setInterruptData(null);
         setAgentStatus('');
+        setWorkspaceError('');
+        setActionDiff('');
+        if (isNarrow) setMobileTab('chat');
 
-        let accumulatedContent = '';
-
+        let acc = '';
         await sendMessage(
-            text,
-            sessionId,
-            (chunk) => {
-                setAgentStatus('');
-                accumulatedContent += chunk;
-                setStreamContent(accumulatedContent);
-            },
-            (newSessionId) => {
-                if (accumulatedContent) {
-                    setMessages((prev) => [...prev, { role: 'assistant', content: accumulatedContent }]);
-                }
-                setStreamContent('');
-                setIsStreaming(false);
-                setAgentStatus('');
-                setSessionId(newSessionId);
-                loadWorkspace(newSessionId);
+            text, sessionId,
+            (chunk) => { setAgentStatus(''); acc += chunk; setStreamContent(acc); },
+            (newSid) => {
+                if (acc) setMessages((prev) => [...prev, { role: 'assistant', content: acc }]);
+                setStreamContent(''); setIsStreaming(false); setAgentStatus('');
+                setSessionId(newSid);
+                loadWorkspace(newSid);
                 loadSessions();
             },
             (err) => {
                 setMessages((prev) => [...prev, { role: 'assistant', content: `Lỗi: ${err}` }]);
-                setStreamContent('');
-                setIsStreaming(false);
-                setAgentStatus('');
+                setStreamContent(''); setIsStreaming(false); setAgentStatus('');
             },
-            (data, newSessionId) => {
-                setIsStreaming(false);
-                setStreamContent('');
-                setAgentStatus('');
-                setSessionId(newSessionId);
-                setInterruptData(data);
-                loadWorkspace(newSessionId);
-                loadSessions();
-            },
-            (statusText) => {
-                setAgentStatus(statusText);
-            }
+            () => {},
+            (statusText) => setAgentStatus(statusText),
         );
-    };
-
-    const handleConfirm = async (response) => {
-        if ((!interruptData && workspace?.status !== 'awaiting_confirmation') || isResuming) return;
-
-        setIsResuming(true);
-        setInterruptData(null);
-        setIsStreaming(true);
-        setStreamContent('');
-        setAgentStatus('');
-
-        const confirmText = typeof response === 'string' ? response : 'Đã xác nhận';
-        setMessages((prev) => [
-            ...prev,
-            { role: 'assistant', content: interruptData?.content || 'Kế hoạch đã lưu và đang chờ xác nhận.' },
-            { role: 'user', content: confirmText === 'ok' ? 'Xác nhận' : confirmText },
-        ]);
-
-        let accumulatedContent = '';
-
-        await resumeChat(
-            sessionId,
-            response,
-            (chunk) => {
-                setAgentStatus('');
-                accumulatedContent += chunk;
-                setStreamContent(accumulatedContent);
-            },
-            () => {
-                if (accumulatedContent) {
-                    setMessages((prev) => [...prev, { role: 'assistant', content: accumulatedContent }]);
-                }
-                setStreamContent('');
-                setIsStreaming(false);
-                setIsResuming(false);
-                setAgentStatus('');
-                loadWorkspace(sessionId);
-                loadSessions();
-            },
-            (err) => {
-                setMessages((prev) => [...prev, { role: 'assistant', content: `Lỗi: ${err}` }]);
-                setStreamContent('');
-                setIsStreaming(false);
-                setIsResuming(false);
-                setAgentStatus('');
-            },
-            (data) => {
-                setIsStreaming(false);
-                setStreamContent('');
-                setIsResuming(false);
-                setInterruptData(data);
-                setAgentStatus('');
-            },
-            (statusText) => {
-                setAgentStatus(statusText);
-            }
-        );
-    };
-
-    const handleModify = () => {
-        if (!workspace?.plan) return;
-        setEditingPlan(true);
     };
 
     const handleSavePlan = async (patch) => {
         setSavingPlan(true);
+        setWorkspaceError('');
         try {
-            const updated = await patchTripPlan(sessionId, patch);
-            setWorkspace(updated);
+            setWorkspace(await patchTripPlan(sessionId, patch));
             setEditingPlan(false);
-        } catch (error) {
-            setMessages((prev) => [...prev, { role: 'assistant', content: `Lỗi cập nhật kế hoạch: ${error.message}` }]);
+        } catch (e) {
+            setWorkspaceError(`Lỗi cập nhật kế hoạch: ${e.message}`);
         } finally {
             setSavingPlan(false);
         }
@@ -211,125 +155,109 @@ export default function ChatPage() {
     const handleTripAction = async (action, targetDay, targetPlaceId) => {
         if (!sessionId) return;
         setLoadingAction({ action, target: targetDay || targetPlaceId });
+        setWorkspaceError('');
         try {
             const res = await executeTripAction(sessionId, action, targetDay, targetPlaceId);
             if (res.status === 'success') {
-                setMessages(prev => [
-                    ...prev,
-                    { role: 'assistant', content: res.message }
-                ]);
+                setActionDiff(res.message || 'Đã cập nhật lịch trình');
+                setWsTab('itinerary');
+                setMessages((prev) => [...prev, { role: 'assistant', content: res.message }]);
                 await loadWorkspace(sessionId);
             } else {
-                setMessages(prev => [
-                    ...prev,
-                    { role: 'assistant', content: `Không thể thực hiện: ${res.message}` }
-                ]);
+                setWorkspaceError(res.message || 'Không thực hiện được');
             }
-        } catch (error) {
-            setMessages(prev => [
-                ...prev,
-                { role: 'assistant', content: `Lỗi: ${error.message}` }
-            ]);
+        } catch (e) {
+            setWorkspaceError(`Lỗi: ${e.message}`);
         } finally {
             setLoadingAction(null);
         }
     };
 
-    const showWelcome = messages.length === 0 && !isStreaming && !interruptData;
+    const showWorkspace = isNarrow ? mobileTab === 'workspace' : !wsCollapsed;
+    const showChat = isNarrow ? mobileTab === 'chat' : true;
+    const dest = workspace?.plan?.destination;
+    const statusPill = workspace?.status ? STATUS_PILL[workspace.status] : null;
 
     return (
-        <div className="app-layout">
+        <div style={{ height: '100%', background: 'var(--page)', color: 'var(--text)' }}>
             <Sidebar
                 sessions={sessions}
                 activeSession={sessionId}
                 onSelectSession={handleSelectSession}
-                onNewChat={handleNewChat}
+                onNewChat={resetConversation}
                 onDeleteSession={handleDeleteSession}
                 onRenameSession={handleRenameSession}
+                open={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
             />
 
-            <main className="main-shell">
-                <section className="command-panel" aria-label="Lập kế hoạch chuyến đi">
-                    <header className="command-header">
-                        <h2>Lập kế hoạch chuyến đi</h2>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            <button
-                                className="header-menu"
-                                type="button"
-                                title={isWorkspaceCollapsed ? "Mở Workspace" : "Thu gọn Workspace"}
-                                onClick={() => setIsWorkspaceCollapsed(!isWorkspaceCollapsed)}
-                            >
-                                <span className="material-symbols-outlined">
-                                    {isWorkspaceCollapsed ? "chrome_reader_mode" : "right_panel_close"}
-                                </span>
+            <div data-shell="1" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                {isNarrow && (
+                    <div data-mobiletabs="1" style={{ display: 'flex', gap: 2, padding: '8px 14px', background: 'var(--soft)', borderBottom: '1px solid var(--line)' }}>
+                        {[['chat', 'Trò chuyện'], ['workspace', 'Kế hoạch']].map(([id, label]) => (
+                            <button key={id} type="button" onClick={() => setMobileTab(id)} style={{ flex: 1, padding: '8px 10px', borderRadius: 8, fontSize: 12.5, fontWeight: 600, background: mobileTab === id ? 'var(--pri)' : 'transparent', color: mobileTab === id ? 'var(--on-pri)' : 'var(--dim)' }}>
+                                {label}
                             </button>
-                            <button className="header-menu" type="button" title="Tùy chọn">
-                                <span className="material-symbols-outlined">more_vert</span>
-                            </button>
-                        </div>
-                    </header>
-
-                    <div className="messages-container">
-                        {showWelcome ? (
-                            <div className="welcome-screen">
-                                <span className="welcome-kicker">Travel planner</span>
-                                <h1 className="welcome-title">Biến ý tưởng du lịch thành kế hoạch có thể đi</h1>
-                                <p className="welcome-sub">
-                                    Nhập điểm đến, ngày đi, ngân sách và sở thích. Workspace bên phải sẽ giúp kiểm tra
-                                    lịch trình, chi phí, rủi ro và bước tiếp theo.
-                                </p>
-                                <div className="welcome-suggestions">
-                                    <button type="button" onClick={() => handleSend('Lập lịch trình đi Đà Nẵng 4 ngày 3 đêm cho 2 người lớn, ngân sách khoảng 10 triệu. Thích đi dạo, ăn uống, không đi quá mệt.')}>
-                                        Đà Nẵng 4N3Đ, 2 người, 10 triệu
-                                    </button>
-                                    <button type="button" onClick={() => handleSend('Tôi muốn đi Phú Quốc 3 ngày 2 đêm, ưu tiên biển và đồ ăn ngon.')}>
-                                        Phú Quốc 3N2Đ, biển và ăn uống
-                                    </button>
-                                    <button type="button" onClick={() => handleSend('Gợi ý chuyến đi Thái Lan 5 ngày cho nhóm bạn, cần tối ưu chi phí.')}>
-                                        Thái Lan 5 ngày, tối ưu chi phí
-                                    </button>
-                                </div>
-                            </div>
-                        ) : (
-                            <>
-                                {messages.map((msg, i) => (
-                                    <ChatBubble key={`${msg.role}-${i}`} role={msg.role} content={msg.content} />
-                                ))}
-
-                                {interruptData && (
-                                    <InterruptBubble
-                                        message={interruptData.content || 'Bạn có muốn xác nhận kế hoạch này không?'}
-                                        onConfirm={handleConfirm}
-                                        onModify={handleModify}
-                                        disabled={isResuming || Boolean(workspace?.missing_fields?.length)}
-                                    />
-                                )}
-
-                                {isStreaming && streamContent && <ChatBubble role="assistant" content={streamContent} />}
-                                {isStreaming && !streamContent && <TypingIndicator status={agentStatus} />}
-                            </>
-                        )}
-                        <div ref={messagesEndRef} />
+                        ))}
                     </div>
+                )}
 
-                    <ChatInput onSend={handleSend} disabled={isStreaming || Boolean(interruptData)} />
-                </section>
-
-                <TripWorkspace
-                    workspace={workspace}
-                    sessionId={sessionId}
-                    onConfirm={handleConfirm}
-                    editing={editingPlan}
-                    onEdit={handleModify}
-                    onSavePlan={handleSavePlan}
-                    onCancelEdit={() => setEditingPlan(false)}
-                    savingPlan={savingPlan}
-                    isCollapsed={isWorkspaceCollapsed}
-                    onToggleCollapse={() => setIsWorkspaceCollapsed(!isWorkspaceCollapsed)}
-                    onTripAction={handleTripAction}
-                    loadingAction={loadingAction}
-                />
-            </main>
+                <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
+                    {showChat && (
+                        <ChatPane
+                            messages={messages}
+                            streamContent={streamContent}
+                            isStreaming={isStreaming}
+                            agentStatus={agentStatus}
+                            onSend={handleSend}
+                            tripTitle={dest ? `Chuyến đi ${dest}` : null}
+                            tripStatus={statusPill}
+                            wsCollapsed={wsCollapsed}
+                            onToggleWs={() => (isNarrow ? setMobileTab('workspace') : setWsCollapsed((v) => !v))}
+                            onOpenSidebar={() => setSidebarOpen(true)}
+                            onToggleTheme={() => setTheme((t) => (resolvedDark(t) ? 'light' : 'dark'))}
+                            themeIcon={resolvedDark(theme) ? 'light_mode' : 'dark_mode'}
+                        />
+                    )}
+                    {showWorkspace && (
+                        <div style={{ flex: isNarrow ? '1 1 auto' : '0 0 528px', width: isNarrow ? '100%' : 528, minWidth: 0, borderLeft: isNarrow ? 'none' : '1px solid var(--line)' }}>
+                            <Workspace
+                                workspace={workspace}
+                                sessionId={sessionId}
+                                onSavePlan={handleSavePlan}
+                                savingPlan={savingPlan}
+                                onTripAction={handleTripAction}
+                                loadingAction={loadingAction}
+                                workspaceError={workspaceError}
+                                isLoading={isWorkspaceLoading}
+                                actionDiff={actionDiff}
+                                onToggleCollapse={() => (isNarrow ? setMobileTab('chat') : setWsCollapsed(true))}
+                                tab={wsTab}
+                                onTab={setWsTab}
+                                editing={editingPlan}
+                                onEdit={() => setEditingPlan(true)}
+                                onCancelEdit={() => setEditingPlan(false)}
+                            />
+                        </div>
+                    )}
+                    {!isNarrow && wsCollapsed && (
+                        <button
+                            type="button"
+                            onClick={() => setWsCollapsed(false)}
+                            title="Mở kế hoạch"
+                            style={{ position: 'fixed', right: 0, top: '50%', transform: 'translateY(-50%)', display: 'grid', placeItems: 'center', width: 30, height: 60, borderRadius: '9px 0 0 9px', border: '1px solid var(--line)', borderRight: 0, background: 'var(--surface)', color: 'var(--dim)' }}
+                        >
+                            <Icon name="left_panel_open" size={18} />
+                        </button>
+                    )}
+                </div>
+            </div>
         </div>
     );
+}
+
+function resolvedDark(theme) {
+    if (theme === 'dark') return true;
+    if (theme === 'light') return false;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 }

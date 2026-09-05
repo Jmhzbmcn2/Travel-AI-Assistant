@@ -1,9 +1,12 @@
 import { useState } from 'react';
 
+const field = { display: 'grid', gap: 5, fontSize: 11.5, fontWeight: 600, color: 'var(--dim)' };
+const input = { minHeight: 36, padding: '0 10px', border: '1px solid var(--line)', borderRadius: 8, background: 'var(--surface)', fontSize: 12.5, outline: 0 };
+
 export default function PlanEditor({ plan, onSave, onCancel, saving }) {
     const [form, setForm] = useState({
-        destination: plan?.destination || '',
         origin: plan?.origin || '',
+        destination: plan?.destination || '',
         departure_date: plan?.departure_date || '',
         return_date: plan?.return_date || '',
         days: plan?.days || '',
@@ -13,51 +16,44 @@ export default function PlanEditor({ plan, onSave, onCancel, saving }) {
         comfort_level: plan?.comfort_level || 'medium',
         priority: plan?.priority || 'cheapest',
     });
+    const set = (k, v) => setForm((c) => ({ ...c, [k]: v }));
 
-    const update = (field, value) => setForm((current) => ({ ...current, [field]: value }));
-    const submit = (event) => {
-        event.preventDefault();
+    const submit = (e) => {
+        e.preventDefault();
         onSave({
             ...form,
             days: form.days ? Number(form.days) : null,
             travelers: Number(form.travelers),
             budget_total: form.budget_total ? Number(form.budget_total) : null,
-            preferences: form.preferences.split(',').map((value) => value.trim()).filter(Boolean),
+            preferences: form.preferences.split(',').map((v) => v.trim()).filter(Boolean),
             departure_date: form.departure_date || null,
             return_date: form.return_date || null,
         });
     };
 
     return (
-        <form className="plan-editor" onSubmit={submit}>
-            <h3>Chỉnh kế hoạch</h3>
-            <div className="plan-editor-grid">
-                <label>Điểm đi<input value={form.origin} onChange={(event) => update('origin', event.target.value)} /></label>
-                <label>Điểm đến<input required value={form.destination} onChange={(event) => update('destination', event.target.value)} /></label>
-                <label>Ngày đi<input type="date" value={form.departure_date} onChange={(event) => update('departure_date', event.target.value)} /></label>
-                <label>Ngày về<input type="date" value={form.return_date} onChange={(event) => update('return_date', event.target.value)} /></label>
-                <label>Số ngày<input type="number" min="1" value={form.days} onChange={(event) => update('days', event.target.value)} /></label>
-                <label>Số người<input type="number" min="1" value={form.travelers} onChange={(event) => update('travelers', event.target.value)} /></label>
-                <label>Ngân sách tổng<input type="number" min="1" value={form.budget_total} onChange={(event) => update('budget_total', event.target.value)} /></label>
-                <label>Mức thoải mái
-                    <select value={form.comfort_level} onChange={(event) => update('comfort_level', event.target.value)}>
+        <form onSubmit={submit} style={{ display: 'grid', gap: 10, padding: 15, border: '1px solid var(--line)', borderRadius: 13, background: 'var(--soft)' }}>
+            <h3 style={{ fontSize: 14, fontWeight: 600, letterSpacing: '-.01em' }}>Chỉnh kế hoạch</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <label style={field}>Điểm đi<input style={input} value={form.origin} onChange={(e) => set('origin', e.target.value)} /></label>
+                <label style={field}>Điểm đến<input style={input} required value={form.destination} onChange={(e) => set('destination', e.target.value)} /></label>
+                <label style={field}>Ngày đi<input style={input} type="date" value={form.departure_date} onChange={(e) => set('departure_date', e.target.value)} /></label>
+                <label style={field}>Ngày về<input style={input} type="date" value={form.return_date} onChange={(e) => set('return_date', e.target.value)} /></label>
+                <label style={field}>Số ngày<input style={input} type="number" min="1" value={form.days} onChange={(e) => set('days', e.target.value)} /></label>
+                <label style={field}>Số người<input style={input} type="number" min="1" value={form.travelers} onChange={(e) => set('travelers', e.target.value)} /></label>
+                <label style={field}>Ngân sách tổng<input style={input} type="number" min="0" value={form.budget_total} onChange={(e) => set('budget_total', e.target.value)} /></label>
+                <label style={field}>Mức thoải mái
+                    <select style={input} value={form.comfort_level} onChange={(e) => set('comfort_level', e.target.value)}>
                         <option value="budget">Tiết kiệm</option>
                         <option value="medium">Cân bằng</option>
                         <option value="comfortable">Thoải mái</option>
                     </select>
                 </label>
-                <label>Ưu tiên
-                    <select value={form.priority} onChange={(event) => update('priority', event.target.value)}>
-                        <option value="cheapest">Tiết kiệm nhất</option>
-                        <option value="less_travel">Di chuyển ít</option>
-                        <option value="comfortable">Thoải mái nhất</option>
-                    </select>
-                </label>
             </div>
-            <label>Sở thích<input required value={form.preferences} onChange={(event) => update('preferences', event.target.value)} placeholder="biển, ăn ngon, không quá mệt" /></label>
-            <div className="plan-editor-actions">
-                <button type="button" onClick={onCancel}>Hủy</button>
-                <button type="submit" disabled={saving}>{saving ? 'Đang lưu...' : 'Lưu thay đổi'}</button>
+            <label style={field}>Sở thích<input style={input} required value={form.preferences} onChange={(e) => set('preferences', e.target.value)} placeholder="biển, ăn ngon, không quá mệt" /></label>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <button type="button" onClick={onCancel} style={{ padding: '0 13px', minHeight: 34, border: '1px solid var(--line)', borderRadius: 8, fontSize: 12.5, fontWeight: 600, color: 'var(--dim)' }}>Huỷ</button>
+                <button type="submit" disabled={saving} style={{ padding: '0 13px', minHeight: 34, borderRadius: 8, background: 'var(--pri)', color: 'var(--on-pri)', fontSize: 12.5, fontWeight: 600 }}>{saving ? 'Đang lưu…' : 'Lưu thay đổi'}</button>
             </div>
         </form>
     );

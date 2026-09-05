@@ -9,7 +9,7 @@ from travel_ai_agent.api.services.session_store import SessionStore
 from travel_ai_agent.config.settings import DEMO_MODE, SERPAPI_API_KEY
 from travel_ai_agent.providers.normalizers import fixture_places, fixture_routes, normalize_places, normalize_reviews
 from travel_ai_agent.schemas import PlaceOption, ReviewSummary, RouteSegment, WeatherForecast
-from travel_ai_agent.services.guardrails import record_tool_call
+from travel_ai_agent.core.guardrails import record_tool_call
 from travel_ai_agent.tools.flight_search import search_flights
 from travel_ai_agent.tools.hotel_search import search_hotels
 from travel_ai_agent.tools.tavily_search import search_web

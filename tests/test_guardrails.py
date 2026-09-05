@@ -4,7 +4,7 @@ from uuid import uuid4
 import pytest
 
 from travel_ai_agent.api.services.session_store import SessionStore
-from travel_ai_agent.services.guardrails import record_tool_call, tool_allowed
+from travel_ai_agent.core.guardrails import record_tool_call, tool_allowed
 
 
 def test_tool_budget_and_cache():

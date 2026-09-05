@@ -1,6 +1,6 @@
 from travel_ai_agent.state.agent_state import AgentState
 from travel_ai_agent.config.prompts import CLASSIFY_INTENT_PROMPT
-from travel_ai_agent.services.llm_service import LLMs
+from travel_ai_agent.core.llm_service import LLMs
 
 
 def classify_intent_node(state: AgentState) -> dict:

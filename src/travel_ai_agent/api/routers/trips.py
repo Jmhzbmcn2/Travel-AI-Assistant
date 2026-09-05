@@ -9,7 +9,6 @@ from travel_ai_agent.api.dependencies import get_graph, get_session_store
 from travel_ai_agent.api.schemas.trip import TripPlanPatch, TripWorkspaceResponse, TripActionRequest, TripActionResponse
 from travel_ai_agent.api.services.chat_service import get_graph_config
 from travel_ai_agent.api.services.session_store import SessionStore
-from travel_ai_agent.api.services.trip_service import graph_plan_from_trip_plan
 from travel_ai_agent.api.routers.auth import get_current_user
 
 router = APIRouter(prefix="/api/v1/trips", tags=["Trips"])
@@ -50,7 +49,7 @@ async def patch_trip_plan(
         store.add_usage_event(session_id, owner_id, "plan_edited", "user_action", {})
     except KeyError:
         raise HTTPException(status_code=404, detail="Trip not found")
-    await graph.aupdate_state(get_graph_config(session_id), {"plan": graph_plan_from_trip_plan(plan)})
+    await graph.aupdate_state(get_graph_config(session_id), {"plan": plan.model_dump(mode="json")})
     return _workspace(session_id, store, owner_id)
 
 

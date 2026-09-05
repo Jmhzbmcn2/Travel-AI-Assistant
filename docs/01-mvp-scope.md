@@ -4,7 +4,7 @@
 
 - Natural-language trip request parsing.
 - Structured trip plan with editable fields.
-- HITL plan confirmation.
+- Editable structured plan with post-result correction and actions.
 - Tool-backed travel data where keys are available.
 - Cost estimation and basic feasibility checks.
 - Final response with itinerary, trade-offs, risks, and next action.
@@ -16,11 +16,12 @@
 - Complex multi-provider pricing optimization.
 - More agents without a clear user-facing decision benefit.
 - Production-grade payment, CRM, or agency dashboard.
+- Pre-provider HITL plan confirmation (deferred to future booking/lead handoff phase).
 
 ## MVP Success Metrics
 
 - User creates a complete trip plan.
-- User edits or confirms the plan.
+- User edits the plan or reviews decision results.
 - User reaches a clear decision or lead action.
 - Cost per generated plan is measurable.
 - The assistant avoids tool calls for non-travel requests.

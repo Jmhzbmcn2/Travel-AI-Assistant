@@ -37,17 +37,11 @@ async def get_graph() -> AsyncGenerator[CompiledStateGraph, None]:
         checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
         
         async with AsyncSqliteSaver.from_conn_string(str(checkpoint_path)) as memory:
-            compiled_graph = graph.compile(
-                checkpointer=memory,
-                interrupt_before=["human_confirm"],
-            )
+            compiled_graph = graph.compile(checkpointer=memory)
             yield compiled_graph
             
     except ImportError:
         from langgraph.checkpoint.memory import MemorySaver
         memory = MemorySaver()
-        compiled_graph = graph.compile(
-            checkpointer=memory,
-            interrupt_before=["human_confirm"],
-        )
+        compiled_graph = graph.compile(checkpointer=memory)
         yield compiled_graph

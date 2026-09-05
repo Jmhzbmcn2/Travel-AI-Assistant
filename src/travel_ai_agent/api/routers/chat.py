@@ -16,9 +16,8 @@ from travel_ai_agent.api.dependencies import get_graph, get_session_store
 from travel_ai_agent.api.schemas.chat import ChatRequest, ChatResponse, ResumeRequest
 from travel_ai_agent.api.services import chat_service
 from travel_ai_agent.api.services.session_store import SessionStore
-from travel_ai_agent.api.services.trip_service import trip_plan_from_graph_plan
-from travel_ai_agent.schemas import DecisionOutput
-from travel_ai_agent.services.guardrails import request_allowed
+from travel_ai_agent.schemas import DecisionOutput, TripPlan
+from travel_ai_agent.core.guardrails import request_allowed
 from travel_ai_agent.api.routers.auth import get_current_user
 
 router = APIRouter(prefix="/api/v1/chat", tags=["Chat"])
@@ -26,17 +25,9 @@ router = APIRouter(prefix="/api/v1/chat", tags=["Chat"])
 NODE_STATUS_MAP = {
     "classify_intent": "Đang phân tích ý định...",
     "chitchat": "Đang chuẩn bị câu trả lời...",
-    "follow_up": "Đang liên kết lịch trình...",
-    "out_of_scope": "Đang kiểm tra phạm vi câu hỏi...",
     "planner": "Đang phác thảo kế hoạch chuyến đi...",
-    "supervisor": "Trưởng nhóm đang phân chia công việc...",
-    "flight_agent": "Trợ lý Chuyến bay đang tìm kiếm vé...",
-    "hotel_agent": "Trợ lý Khách sạn đang tìm kiếm phòng...",
-    "weather_agent": "Trợ lý Thời tiết đang xem dự báo...",
-    "info_agent": "Trợ lý Thông tin đang tra cứu địa điểm...",
-    "reflect": "Đang đánh giá và tối ưu hóa hành trình...",
-    "decision": "Đang phân tích rủi ro ngân sách...",
-    "respond": "Đang hoàn thiện câu trả lời..."
+    "decision": "Đang tìm vé, khách sạn và phân tích chi phí...",
+    "respond": "Đang hoàn thiện câu trả lời...",
 }
 
 
@@ -48,8 +39,12 @@ def _resolve_session_id(session_id: str | None) -> str:
 
 
 def _persist_processed(sid: str, processed: dict, store: SessionStore, owner_id: str) -> None:
-    if processed["type"] == "interrupt":
-        store.save_trip(sid, owner_id, trip_plan_from_graph_plan(processed["data"]["plan"]), "awaiting_confirmation")
+    # Persist plan (hoặc draft khi planner còn hỏi thiếu field)
+    raw_plan = processed.get("plan") or processed.get("plan_draft")
+    if raw_plan:
+        store.save_trip(sid, owner_id, TripPlan.model_validate(raw_plan), "draft")
+
+    # Persist decision → status moves to decided
     if processed.get("decision"):
         dec = DecisionOutput.model_validate(processed["decision"])
         store.save_decision(sid, owner_id, dec)
@@ -114,9 +109,9 @@ async def chat(
     try:
         _, processed = await chat_service.invoke_graph(graph, sid, request.message)
 
-        _persist_processed(sid, processed, store)
+        _persist_processed(sid, processed, store, owner_id)
         if processed["type"] == "done":
-            store.add_message(sid, "assistant", processed["message"])
+            store.add_message(sid, owner_id, "assistant", processed["message"])
 
         return ChatResponse(
             response=processed["message"],
@@ -138,6 +133,12 @@ async def resume_chat(
     """Resume graph sau khi user xác nhận interrupt."""
     sid = request.session_id
     store.init(sid, owner_id)
+
+    # Guard: no pending interrupt → 409
+    from travel_ai_agent.api.services.chat_service import get_graph_config
+    snapshot = await graph.aget_state(get_graph_config(sid))
+    if not snapshot.next:
+        raise HTTPException(status_code=409, detail="No pending interrupt")
 
     try:
         _, processed = await chat_service.resume_graph(graph, sid)
@@ -206,6 +207,8 @@ async def chat_stream(
             async for event in _sse_generator(sid, processed, store, owner_id):
                 yield event
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
@@ -221,6 +224,12 @@ async def stream_resume(
     """Stream resume sau interrupt."""
     sid = request.session_id
     store.init(sid, owner_id)
+
+    # Guard: no pending interrupt → 409
+    from travel_ai_agent.api.services.chat_service import get_graph_config
+    snapshot = await graph.aget_state(get_graph_config(sid))
+    if not snapshot.next:
+        raise HTTPException(status_code=409, detail="No pending interrupt")
 
     async def event_generator() -> AsyncGenerator[str, None]:
         try:
@@ -249,6 +258,8 @@ async def stream_resume(
             async for event in _sse_generator(sid, processed, store, owner_id):
                 yield event
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")

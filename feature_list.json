@@ -1,0 +1,158 @@
+﻿{
+    "active_feature":  "repo-tidy",
+    "features":  [
+                     {
+                         "id":  "repo-tidy",
+                         "name":  "Repo tidy",
+                         "title":  "Don cau truc thu muc: root docs, Dockerfile, agents->nodes, services->core",
+                         "description":  "Chuyen 4 planning doc vao docs/. Xoa Dockerfile hong + _append_forecast.py + seed_sid.txt + 198 test sqlite. Dockerfile.backend -> Dockerfile. Gop src/travel_ai_agent/agents/ vao nodes/ (planner_node, respond_node). Doi src/travel_ai_agent/services/ -> core/ (bo trung ten voi api/services/). Cap nhat README + backend-map.",
+                         "status":  "complete",
+                         "dependencies":  [
+                                              "ui-redesign-verdict-first"
+                                          ],
+                         "done_criteria":  [
+                                               "Root .md chi con AGENTS/README/progress/session-handoff.",
+                                               "1 Dockerfile (ban dung, requirements.txt, --app-dir src); docker-compose build tro dung.",
+                                               "src/travel_ai_agent/agents/ da xoa; 5 node deu o nodes/*_node.py.",
+                                               "src/travel_ai_agent/services/ -> core/; khong con import travel_ai_agent.services.",
+                                               ".gitignore chan run-logs/ seed_sid.txt data/*.sqlite; test sqlite da xoa.",
+                                               "README + backend-map cap nhat theo graph 5-node.",
+                                               "compileall + pytest (60) + init.ps1 pass."
+                                           ],
+                         "evidence":  [
+                                          "python -m compileall src main.py pass.",
+                                          "python -m pytest tests/ -q: 60 passed.",
+                                          ".\\init.ps1: compile + eslint + vite build pass."
+                                      ],
+                         "next_step":  "Commit toan bo (lean backend + UI redesign + repo tidy)."
+                     },
+                     {
+                         "id":  "ui-redesign-verdict-first",
+                         "name":  "UI redesign verdict-first",
+                         "title":  "Ap dung ban redesign Lo trinh: 2 pane, verdict-first workspace, palette teal, dark mode",
+                         "description":  "Frontend viet lai theo Claude Design canvas do user gui. Layout 2 pane (chat + workspace) thay 3 cot, sidebar drawer, mobile tabs. Workspace: VerdictCard + tabs Tong quan/Lich trinh/Chi phi/Rui ro. Palette teal #125f5c (bo do), dark mode, font Be Vietnam Pro + JetBrains Mono + Material Symbols. Component 11 -> 6. response_agent rut gon message chat con ~4 dong.",
+                         "status":  "complete",
+                         "dependencies":  [
+                                              "lean-backend-graph"
+                                          ],
+                         "done_criteria":  [
+                                               "Layout 2 pane + sidebar drawer + mobile tabs (breakpoint 860px).",
+                                               "Workspace verdict-first: VerdictCard (strip mau theo decision_status, confidence bars, 1-cau verdict, 3 mini-stat, CTA) + 4 tabs.",
+                                               "2 thang badge (trust verified/estimated/unverified/fixture/missing + severity high/medium/low) thay 5 ho.",
+                                               "Palette teal, dark mode (:root / prefers-color-scheme / [data-theme]), 3 Google Font.",
+                                               "Component 11 -> 6 (ChatPane, Workspace, Sidebar, PlanEditor + lib/ui, lib/format).",
+                                               "response_agent message chat ngan (verdict + tro sang workspace), khong dump full itinerary.",
+                                               "?session= va ?theme= URL param.",
+                                               "npm run lint + npm run build pass.",
+                                               "python -m pytest tests/ -q pass (60)."
+                                           ],
+                         "evidence":  [
+                                          "npm run lint: 0 loi. npm run build: 37 modules, CSS 4.51 kB, JS 249 kB.",
+                                          "python -m pytest tests/ -q: 60 passed (smoke deselected).",
+                                          "Screenshot headless: desktop light (welcome + decided workspace + 3 options), desktop dark (welcome). Mobile overflow do bang CDP iframe ep width 320/375/414 -> scrollWidth == clientWidth, khong tran."
+                                      ],
+                         "next_step":  "Commit. Kiem tra tren trinh duyet that (dark + mobile). Roi: what-if ngan sach, verified place identity."
+                     },
+                     {
+                         "id":  "lean-backend-graph",
+                         "name":  "Lean backend graph",
+                         "title":  "Tinh gọn LangGraph 12 node xuống 5, respond template, sửa bug trip actions",
+                         "description":  "Xoa supervisor + 4 agent node + reflection + follow_up + out_of_scope + plan_builder. decision_node async goi flights||hotels concurrent va ghi normalized options vao state. response_agent thanh template deterministic (bo LLM). state[plan] dung TripPlan dump truc tiep, bo lop convert. Sua bug: POST /trips/{id}/actions truoc day chay voi options rong.",
+                         "status":  "complete",
+                         "dependencies":  [
+                                              "simplify-agent-flow"
+                                          ],
+                         "done_criteria":  [
+                                               "Graph con 5 node: classify_intent, chitchat, planner, decision, respond.",
+                                               "decision_node async, fetch_flights || fetch_hotels qua asyncio.gather, ghi flight_options/hotel_options/place_options/route_segments/weather_forecasts/review_summaries vao state.",
+                                               "response_agent la template deterministic tu DecisionOutput + TripPlan, khong goi LLM.",
+                                               "state[plan] = TripPlan.model_dump(mode=json); trip_plan_from_graph_plan / graph_plan_from_trip_plan da xoa.",
+                                               "AgentState cat ~12 field chet.",
+                                               "POST /trips/{id}/actions chay voi options that tu state.",
+                                               "python -m compileall src main.py pass.",
+                                               "python -m pytest tests/ -q pass (60 passed, bo smoke).",
+                                               "init.ps1 pass (compile + frontend lint + build)."
+                                           ],
+                         "evidence":  [
+                                          "python -m compileall src main.py passed.",
+                                          "python -m pytest tests/ -q: 60 passed (smoke deselected).",
+                                          ".\\init.ps1: Python compile + eslint + vite build (41 modules, 226.94 kB) passed.",
+                                          "Manual E2E port 8012: chitchat LLM, out-of-scope canned (0 LLM), travel flow recommended + insufficient_data, trip actions 200 with real logic."
+                                      ],
+                         "next_step":  "Commit. Next: UI redesign (verdict-first, 2 pane)."
+                     },
+                     {
+                         "id":  "harness-state-lifecycle",
+                         "name":  "State and lifecycle harness",
+                         "title":  "Add restartable state and lifecycle harness",
+                         "description":  "Add feature tracking, progress logging, session handoff, and root verification entrypoints without changing product runtime behavior.",
+                         "status":  "complete",
+                         "dependencies":  [
+
+                                          ],
+                         "done_criteria":  [
+                                               "AGENTS.md routes agents to feature_list.json, progress.md, and session-handoff.md before substantial work.",
+                                               "feature_list.json tracks active feature status, dependencies, done criteria, evidence, and next step.",
+                                               "progress.md records Verification Evidence and restartable progress notes.",
+                                               "session-handoff.md captures files, blockers, and recommended next step for the next session.",
+                                               "init.ps1 and init.sh provide fail-fast root verification entrypoints."
+                                           ],
+                         "evidence":  [
+                                          "harness validator: Overall 100/100 with all five subsystems passing.",
+                                          ".\\init.ps1 -SkipFrontend: passed Python compile via existing check_project.ps1.",
+                                          "bash ./init.sh --skip-frontend: passed Python compile through shell wrapper."
+                                      ],
+                         "next_step":  "Complete. No further action needed."
+                     },
+                     {
+                         "id":  "simplify-agent-flow",
+                         "name":  "Simplify agent flow",
+                         "title":  "Remove mandatory HITL and reflection from normal travel flow",
+                         "description":  "Simplify the main graph from plannerâ†’interruptâ†’supervisorâ†’agentsâ†’reflectâ†’decisionâ†’respond to plannerâ†’supervisorâ†’agentsâ†’decisionâ†’respond. HITL/resume endpoints remain for future use but are not triggered in normal MVP flow.",
+                         "status":  "complete",
+                         "dependencies":  [
+                                              "harness-state-lifecycle"
+                                          ],
+                         "done_criteria":  [
+                                               "Graph compiles without interrupt_before; planner routes directly to supervisor for complete plans.",
+                                               "Reflection node removed from graph; supervisor routes to decision when all agent steps complete.",
+                                               "Resume endpoints return 409 when no pending interrupt exists.",
+                                               "_persist_processed saves plan as draft and decision as decided without intermediate awaiting_confirmation.",
+                                               "Sync endpoint owner_id bug fixed.",
+                                               "TripWorkspace no longer shows always-disabled XÃ¡c nháº­n káº¿ hoáº¡ch button.",
+                                               "ChatInput not disabled by interrupt state in normal flow.",
+                                               "Smoke test TC5 asserts no interrupt, TC7 asserts 409 on resume.",
+                                               "python -m compileall src main.py passes.",
+                                               "Frontend npm run build passes."
+                                           ],
+                         "evidence":  [
+                                          "Python compile checks passed successfully via .\\init.ps1.",
+                                          "Frontend production build passed successfully via .\\init.ps1 (vite build completed).",
+                                          "API smoke tests passed all 10 scenarios successfully (Health, Sessions, Trip Empty, Chitchat, Out-of-scope, Travel Stream, Workspace Draft, Usage, Export Markdown, Resume Guard 409)."
+                                      ],
+                         "next_step":  "Complete. No further action needed."
+                     },
+                     {
+                         "id":  "pm-current-status-report",
+                         "name":  "PM current status report",
+                         "title":  "Generate detailed current Travel AI Agent report for PM review",
+                         "description":  "Create a PM-ready current-state report covering product direction, runtime flow, backend/frontend capabilities, verification evidence, gaps, and recommended next features.",
+                         "status":  "complete",
+                         "dependencies":  [
+                                              "simplify-agent-flow"
+                                          ],
+                         "done_criteria":  [
+                                               "Report is grounded in product brief, MVP scope, feature state, progress log, session handoff, backend map, frontend map, and selected live code paths.",
+                                               "Report separates current capability from gaps and production readiness risks.",
+                                               "Report includes current verification evidence.",
+                                               "Report recommends concrete next product features for PM prioritization."
+                                           ],
+                         "evidence":  [
+                                          "Created docs/11-current-status-report-for-pm.md.",
+                                          "python -m compileall src main.py passed.",
+                                          "python -m pytest tests/test_decision_engine.py tests/test_itinerary_builder.py tests/test_coverage_gate.py tests/test_auth.py -q passed with 22 tests; only pytest cache permission warnings."
+                                      ],
+                         "next_step":  "PM can review the report and choose the next active feature, recommended: Route Sanity Checker UX."
+                     }
+                 ]
+}

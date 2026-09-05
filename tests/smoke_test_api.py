@@ -94,6 +94,7 @@ def test_chat_stream_travel(session_id=None):
             return sid, "error"
 
     full_text = "".join(chunks)
+    assert "interrupt" not in events, f"Travel flow should complete without interrupt, got events: {events}"
     print(f"✅ TC5: Travel stream OK (session={sid[:8]}..., events={set(events)})")
     print(f"   Response: {full_text[:200]}...")
     return sid, "done"
@@ -104,6 +105,7 @@ def test_trip_workspace(session_id):
     r = requests.get(f"{BASE}/api/v1/trips/{session_id}")
     assert r.status_code == 200
     data = r.json()
+    assert data.get("status") in ("draft", "decided", "empty", None), f"Unexpected trip status: {data.get('status')}"
     print(f"✅ TC6: Trip workspace OK (status={data.get('status')}, plan={'yes' if data.get('plan') else 'no'})")
     if data.get("plan"):
         plan = data["plan"]
@@ -117,33 +119,15 @@ def test_trip_workspace(session_id):
     return data
 
 
-def test_resume_after_interrupt(session_id):
-    """TC7: Resume after HITL interrupt."""
+def test_resume_409_no_interrupt(session_id):
+    """TC7: Resume with no pending interrupt should return 409."""
     r = requests.post(
         f"{BASE}/api/v1/chat/stream/resume",
         json={"session_id": session_id, "response": "ok"},
-        stream=True,
-        timeout=120,
+        timeout=10,
     )
-    assert r.status_code == 200
-    chunks = []
-    events = []
-    for line in r.iter_lines(decode_unicode=True):
-        if not line or not line.startswith("data: "):
-            continue
-        data = json.loads(line[6:])
-        events.append(data["type"])
-        if data["type"] == "chunk":
-            chunks.append(data["content"])
-        elif data["type"] == "done":
-            break
-        elif data["type"] == "error":
-            print(f"   ❌ Resume error: {data.get('content', 'unknown')}")
-            return
-
-    full_text = "".join(chunks)
-    print(f"✅ TC7: Resume stream OK (events={set(events)})")
-    print(f"   Response: {full_text[:200]}...")
+    assert r.status_code == 409, f"Expected 409, got {r.status_code}"
+    print(f"✅ TC7: Resume with no interrupt returns 409 OK")
 
 
 def test_out_of_scope():
@@ -215,13 +199,10 @@ if __name__ == "__main__":
     test_session_usage(sid)
     test_export_markdown(sid)
 
-    if status == "interrupt":
-        print()
-        print("--- HITL Resume ---")
-        test_resume_after_interrupt(sid)
-        time.sleep(1)
-        test_trip_workspace(sid)
-        test_export_markdown(sid)
+    # Resume without interrupt → 409
+    print()
+    print("--- Resume Guard ---")
+    test_resume_409_no_interrupt(sid)
 
     print()
     print("=" * 60)

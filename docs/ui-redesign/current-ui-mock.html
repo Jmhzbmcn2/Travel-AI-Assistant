@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Travel AI Agent — Mock UI hiện tại</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+/* =====================================================================
+   MOCK TĨNH — mô phỏng UI hiện tại của Travel AI Agent.
+   CSS lấy gần như nguyên văn từ frontend/src/index.css (2026-08-31).
+   Chỉ thêm: .mockbar (thanh chuyển trạng thái, KHÔNG thuộc app thật).
+   ===================================================================== */
+
+:root {
+  --surface-page: #f2f6f4;
+  --surface: #ffffff;
+  --surface-soft: #f7faf8;
+  --surface-muted: #edf3f0;
+  --surface-danger: #fff1f2;
+  --surface-warning: #fff8e6;
+  --surface-success: #eefaf2;
+  --surface-info: #eef5ff;
+  --text: #18201e;
+  --text-muted: #596662;
+  --text-subtle: #74817d;
+  --border: #d9e2df;
+  --border-strong: #b7c4c0;
+  --primary: #dc2626;
+  --primary-hover: #b91c1c;
+  --primary-soft: #fff1f2;
+  --on-primary: #ffffff;
+  --warning: #9a5b0a;
+  --success: #13753b;
+  --danger: #bf1d2d;
+  --info: #1e4f9a;
+  --radius-control: 6px;
+  --radius-panel: 8px;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgb(24 32 30 / 0.06);
+  --shadow-md: 0 12px 30px rgb(24 32 30 / 0.08);
+  --sidebar-width: 260px;
+  --workspace-width: clamp(360px, 32vw, 500px);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { width: 100%; margin: 0; }
+
+body {
+  background: var(--surface-page);
+  color: var(--text);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, textarea, input, select { font: inherit; }
+button { border: 0; }
+
+/* ---- thanh mock (không thuộc app) ---- */
+.mockbar {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  padding: 10px 16px;
+  background: #1f2937; color: #e5e7eb;
+  font-size: 12px; font-weight: 600;
+}
+.mockbar strong { color: #fff; }
+.mockbar .spacer { flex: 1; }
+.mockbar button {
+  padding: 6px 12px; border-radius: 6px; cursor: pointer;
+  background: #374151; color: #e5e7eb; font-weight: 700; font-size: 12px;
+}
+.mockbar button.active { background: #dc2626; color: #fff; }
+.mockbar span.note { color: #9ca3af; font-weight: 500; }
+
+.app-frame { height: calc(100dvh - 41px); }
+
+.app-layout {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  background: var(--surface-page);
+}
+
+.sidebar {
+  min-width: 0; height: 100%;
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 16px;
+  border-right: 1px solid var(--border);
+  background: var(--surface-soft);
+}
+.sidebar-brand { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.sidebar-brand h1 {
+  margin: 0; color: var(--primary);
+  font-family: 'Plus Jakarta Sans', Inter, sans-serif;
+  font-size: 20px; line-height: 24px; font-weight: 800;
+}
+.sidebar-brand p { margin: 2px 0 0; color: var(--text-muted); font-size: 11px; line-height: 14px; font-weight: 700; }
+
+.new-chat-btn, .primary-action, .secondary-action, .interrupt-btn, .action-btn,
+.section-heading button, .plan-editor-actions button {
+  min-height: 38px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border-radius: var(--radius-control);
+  font-size: 12px; line-height: 16px; font-weight: 800; cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease;
+}
+.new-chat-btn, .primary-action, .interrupt-btn.confirm, .plan-editor-actions .primary-action {
+  border: 1px solid var(--primary); background: var(--primary); color: var(--on-primary); box-shadow: var(--shadow-sm);
+}
+.new-chat-btn:hover, .primary-action:hover, .interrupt-btn.confirm:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+.secondary-action, .interrupt-btn.modify, .action-btn, .section-heading button, .plan-editor-actions .secondary-action {
+  border: 1px solid var(--border); background: var(--surface); color: var(--text); text-decoration: none;
+}
+.secondary-action:hover, .interrupt-btn.modify:hover, .action-btn:hover, .section-heading button:hover {
+  border-color: var(--border-strong); background: var(--surface-muted);
+}
+
+.recent-trips { flex: 1; min-height: 0; overflow-y: auto; }
+.recent-trips > p {
+  margin: 0 0 8px; color: var(--text-subtle);
+  font-size: 11px; line-height: 14px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.recent-trips ul { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.session-item-container { position: relative; min-width: 0; }
+.session-btn {
+  width: 100%; min-height: 38px; padding: 8px 40px 8px 10px;
+  display: flex; align-items: center; gap: 10px;
+  border-radius: var(--radius-control); background: transparent; color: var(--text-muted);
+  font-size: 12px; line-height: 16px; font-weight: 700; text-align: left; cursor: pointer;
+}
+.session-btn:hover, .session-btn.active { background: var(--surface-muted); color: var(--primary); }
+.session-title-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.session-actions-wrapper { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); }
+.session-menu-trigger {
+  width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-pill); background: transparent; color: var(--text-muted); cursor: pointer; opacity: 0;
+}
+.session-item-container:hover .session-menu-trigger { opacity: 1; }
+.session-menu-trigger:hover { background: var(--surface-muted); color: var(--text); }
+
+.header-menu {
+  min-height: 34px; padding: 0 10px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-control); background: transparent; color: var(--text-muted);
+  font-size: 12px; font-weight: 800; cursor: pointer;
+}
+.header-menu:hover { background: var(--surface-muted); color: var(--text); }
+
+.main-shell {
+  min-width: 0; height: 100%;
+  display: grid;
+  grid-template-columns: minmax(460px, 1fr) var(--workspace-width);
+}
+
+.command-panel {
+  min-width: 0; height: 100%;
+  display: flex; flex-direction: column;
+  border-right: 1px solid var(--border); background: var(--surface);
+}
+.command-header, .decision-header { background: var(--surface-soft); }
+.command-header {
+  min-height: 64px; padding: 12px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.command-header h2 { margin: 0; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 16px; line-height: 22px; font-weight: 800; }
+.header-actions { display: flex; align-items: center; gap: 8px; }
+
+.messages-container {
+  flex: 1; min-height: 0; padding: 24px;
+  display: flex; flex-direction: column; gap: 20px;
+  overflow-y: auto; background: var(--surface);
+}
+
+.welcome-screen {
+  width: min(720px, 100%); min-height: 100%;
+  display: flex; flex-direction: column; justify-content: center; gap: 14px;
+}
+.welcome-kicker, .panel-kicker {
+  margin: 0; color: var(--primary);
+  font-size: 11px; line-height: 14px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.welcome-title {
+  margin: 0; color: var(--text);
+  font-family: 'Plus Jakarta Sans', Inter, sans-serif;
+  font-size: clamp(28px, 4vw, 44px); line-height: 1.08; font-weight: 800;
+}
+.welcome-sub { max-width: 60ch; margin: 0; color: var(--text-muted); font-size: 14px; line-height: 22px; }
+.welcome-suggestions { display: grid; gap: 8px; margin-top: 8px; }
+.welcome-suggestions button {
+  min-height: 50px; padding: 12px 14px;
+  border: 1px solid var(--border); border-radius: var(--radius-panel);
+  background: var(--primary-soft); color: var(--text);
+  font-size: 14px; font-weight: 800; text-align: left; cursor: pointer;
+}
+.welcome-suggestions button:hover { border-color: var(--primary); background: #fff7f7; }
+
+.bubble-row, .typing-row { display: flex; align-items: flex-start; gap: 12px; max-width: min(86%, 860px); }
+.bubble-row.user { align-self: flex-end; flex-direction: row-reverse; max-width: min(78%, 760px); }
+.bubble-avatar {
+  width: 32px; height: 32px; flex: 0 0 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-pill); background: var(--surface-muted); color: var(--text);
+  font-size: 10px; font-weight: 800;
+}
+.bubble-avatar.assistant { background: var(--primary); color: var(--on-primary); }
+.bubble { padding: 12px 14px; border: 1px solid var(--border); border-radius: 16px; color: var(--text); font-size: 14px; line-height: 21px; }
+.bubble.user { border-top-right-radius: 4px; background: var(--surface-muted); }
+.bubble.assistant { border-top-left-radius: 4px; background: var(--primary-soft); }
+.assistant-stack { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.md-content p { margin: 0 0 8px; }
+.md-content p:last-child { margin-bottom: 0; }
+.md-content strong { font-weight: 800; }
+.md-content ul { margin: 6px 0 6px 18px; padding: 0; }
+.md-content li { margin-bottom: 4px; }
+
+.interrupt-card {
+  padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-panel);
+  background: var(--surface); box-shadow: var(--shadow-sm);
+}
+.interrupt-card h3 { margin: 0 0 6px; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 16px; line-height: 22px; }
+.interrupt-card p { margin: 0 0 14px; color: var(--text-muted); font-size: 13px; line-height: 19px; }
+.interrupt-actions { display: flex; gap: 8px; }
+
+.typing-indicator {
+  min-height: 38px; padding: 0 14px;
+  display: inline-flex; align-items: center; gap: 10px;
+  border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--primary-soft);
+}
+.typing-dots { display: flex; gap: 5px; }
+.typing-dot { width: 6px; height: 6px; border-radius: var(--radius-pill); background: var(--primary); animation: bounce 1.2s ease-in-out infinite; }
+.typing-dot:nth-child(2) { animation-delay: 160ms; }
+.typing-dot:nth-child(3) { animation-delay: 320ms; }
+.typing-status { color: var(--text-muted); font-size: 12px; font-weight: 700; white-space: nowrap; }
+
+.chat-input-area { padding: 16px; border-top: 1px solid var(--border); background: var(--surface-soft); }
+.chat-input-wrapper {
+  border: 1px solid var(--border); border-radius: var(--radius-panel);
+  background: var(--surface); box-shadow: var(--shadow-sm);
+}
+.chat-input {
+  width: 100%; min-height: 80px; max-height: 160px; padding: 12px 14px;
+  border: 0; outline: 0; resize: none; background: transparent; color: var(--text);
+  font-size: 14px; line-height: 20px;
+}
+.chat-input::placeholder { color: var(--text-subtle); }
+.composer-actions { padding: 0 12px 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.composer-hint { color: var(--text-subtle); font-size: 11px; font-weight: 700; }
+.send-btn {
+  min-width: 48px; height: 32px; padding: 0 12px;
+  border-radius: var(--radius-pill); background: var(--primary); color: var(--on-primary);
+  font-size: 12px; font-weight: 800; cursor: pointer;
+}
+.send-btn:hover { background: var(--primary-hover); }
+
+.decision-canvas {
+  min-width: 0; height: 100%;
+  display: flex; flex-direction: column;
+  border-left: 1px solid var(--border); background: var(--surface);
+}
+.decision-header { padding: 20px; border-bottom: 1px solid var(--border); }
+.decision-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.decision-title-row h2 { margin: 2px 0 0; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 22px; line-height: 28px; font-weight: 800; }
+.decision-status-card {
+  margin-top: 14px; padding: 12px;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface);
+}
+.decision-status-card p { margin: 8px 0 0; color: var(--text-muted); font-size: 12px; line-height: 17px; }
+
+.summary-pill, .data-mode-badge, .budget-badge, .trust-badge, .rec-badge, .tradeoff-tag, .freshness-tag {
+  min-height: 24px; padding: 3px 10px;
+  display: inline-flex; align-items: center; gap: 5px;
+  border: 1px solid transparent; border-radius: var(--radius-pill);
+  font-size: 11px; line-height: 14px; font-weight: 800; white-space: nowrap;
+}
+.summary-pill.success, .badge-success, .data-mode-badge.verified, .trust-badge.verified { border-color: #b8e9c8; background: var(--surface-success); color: var(--success); }
+.summary-pill.warning, .badge-warning, .data-mode-badge.draft_only, .trust-badge.estimated { border-color: #f4d389; background: var(--surface-warning); color: var(--warning); }
+.summary-pill.error, .badge-danger, .data-mode-badge.unsupported, .trust-badge.unverified { border-color: #f5b4bb; background: var(--surface-danger); color: var(--danger); }
+.badge-neutral { border-color: var(--border); background: var(--surface-muted); color: var(--text-muted); }
+
+.trip-meta-grid { margin-top: 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.trip-meta-grid div { padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface); }
+.trip-meta-grid span, .cost-total-label, .cost-per-person span, .detail-label, .cost-label {
+  display: block; color: var(--text-subtle); font-size: 11px; line-height: 14px; font-weight: 800;
+}
+.trip-meta-grid strong { display: block; margin-top: 4px; color: var(--text); font-size: 13px; line-height: 18px; font-weight: 800; }
+
+.decision-scroll { flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+
+.workspace-section, .plan-editor, .workspace-empty {
+  padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface);
+}
+.workspace-empty { display: grid; gap: 10px; color: var(--text-muted); }
+.workspace-empty h3, .workspace-section h3, .plan-editor h3 {
+  margin: 0; color: var(--text);
+  font-family: 'Plus Jakarta Sans', Inter, sans-serif;
+  font-size: 15px; line-height: 22px; font-weight: 800;
+}
+.workspace-empty p, .section-heading p { margin: 0; color: var(--text-muted); font-size: 12px; line-height: 18px; }
+.workspace-empty ul { display: grid; gap: 6px; margin: 0; padding-left: 16px; list-style: disc; }
+
+.section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.section-heading.stacked { align-items: flex-start; flex-direction: column; gap: 4px; }
+
+.plan-summary { display: grid; gap: 2px; margin: 0; }
+.plan-summary div, .cost-detail-list li, .mini-cost-list li {
+  display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--border);
+}
+.plan-summary div:first-child, .cost-detail-list li:first-child { border-top: 0; }
+.plan-summary dt { color: var(--text-subtle); font-size: 12px; font-weight: 800; }
+.plan-summary dd { margin: 0; color: var(--text); font-size: 12px; line-height: 18px; font-weight: 700; text-align: right; }
+
+.missing-section, .blocking-reasons-section, .evidence-summary-section { background: var(--surface-warning); border-color: #f4d389; }
+.missing-section h3, .blocking-reasons-section h3, .evidence-summary-section h3 { margin-bottom: 10px; color: var(--warning); }
+.compact-list, .blocking-reasons-list, .risk-list, .cost-detail-list, .mini-cost-list { margin: 0; padding: 0; list-style: none; }
+.compact-list, .blocking-reasons-list { display: grid; gap: 8px; }
+.compact-list li, .blocking-reason-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  color: var(--warning); font-size: 13px; line-height: 18px; font-weight: 700;
+}
+
+.workspace-warning {
+  padding: 10px 12px; display: flex; flex-direction: column; gap: 4px;
+  border: 1px solid #f4d389; border-radius: var(--radius-panel);
+  background: var(--surface-warning); color: var(--warning);
+  font-size: 13px; line-height: 18px; font-weight: 700;
+}
+.workspace-warning p { margin: 0; font-weight: 600; }
+
+.plan-editor { display: grid; gap: 12px; }
+.plan-editor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.plan-editor label { display: grid; gap: 6px; color: var(--text); font-size: 12px; font-weight: 800; }
+.plan-editor input, .plan-editor select {
+  width: 100%; min-height: 38px; padding: 8px 10px;
+  border: 1px solid var(--border); border-radius: var(--radius-control);
+  background: var(--surface); color: var(--text); outline: none;
+}
+.plan-editor-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.primary-action.compact { width: auto; min-height: 38px; }
+
+.comparison-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.comparison-card {
+  min-height: 190px; padding: 14px;
+  display: flex; flex-direction: column; gap: 10px;
+  border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface-soft);
+}
+.comparison-card.recommended { border-color: var(--primary); background: var(--primary-soft); }
+.comparison-header { display: flex; justify-content: space-between; gap: 10px; }
+.comparison-header strong { display: block; font-size: 14px; line-height: 18px; }
+.comparison-header span:not(.rec-badge) { display: block; margin-top: 3px; color: var(--text-muted); font-size: 11px; line-height: 14px; font-weight: 700; }
+.rec-badge { background: var(--primary); color: var(--on-primary); }
+.comparison-cost { display: grid; gap: 2px; }
+.big-cost, .cost-total-value { color: var(--text); font-size: 19px; line-height: 24px; font-weight: 800; }
+.comparison-status { display: grid; gap: 6px; }
+.status-item { display: flex; justify-content: space-between; gap: 10px; color: var(--text-muted); font-size: 12px; line-height: 16px; }
+.status-item strong { color: var(--text); text-align: right; }
+.comparison-tradeoffs { display: flex; flex-wrap: wrap; gap: 4px; }
+.tradeoff-tag { background: var(--surface-muted); color: var(--text-muted); }
+.comparison-reasons { margin: 0; padding-left: 16px; color: var(--text-muted); font-size: 12px; line-height: 18px; }
+.comparison-breakdown { margin-top: auto; color: var(--text-muted); font-size: 12px; }
+.comparison-breakdown summary { cursor: pointer; font-weight: 800; }
+
+.cost-summary {
+  display: grid; grid-template-columns: 1.25fr 1fr auto; gap: 12px; align-items: center;
+  margin-bottom: 12px; padding: 12px;
+  border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface-soft);
+}
+.cost-per-person { display: grid; gap: 2px; }
+.cost-per-person strong { font-size: 14px; line-height: 18px; }
+.cost-status { display: grid; justify-items: end; gap: 4px; }
+.budget-delta { font-size: 12px; font-weight: 800; }
+.budget-delta.over { color: var(--danger); }
+.budget-delta.under { color: var(--success); }
+.cost-detail-list li { color: var(--text-muted); font-size: 12px; }
+.cost-detail-value { color: var(--text); }
+.cost-assumptions { margin-top: 12px; color: var(--text-muted); font-size: 12px; }
+.cost-assumptions summary { cursor: pointer; font-weight: 800; }
+.data-freshness { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+.freshness-tag { border-color: var(--border); background: var(--surface-soft); color: var(--text-muted); }
+
+.timeline-container { display: grid; gap: 14px; }
+.timeline-day { padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface-soft); }
+.timeline-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.day-label { display: grid; gap: 2px; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 15px; line-height: 20px; font-weight: 800; }
+.day-label small { color: var(--text-subtle); font-family: Inter, sans-serif; font-size: 11px; font-weight: 800; }
+.timeline-items { display: grid; gap: 8px; }
+.place-card, .route-leg-content, .risk-group { border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface); }
+.place-card { padding: 12px; }
+.place-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.place-category { display: block; margin-bottom: 4px; color: var(--primary); font-size: 10px; line-height: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+.place-title { margin: 0; color: var(--text); font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 15px; line-height: 20px; }
+.place-area { margin-top: 4px; display: flex; align-items: center; gap: 4px; color: var(--text-muted); font-size: 12px; line-height: 16px; font-weight: 700; }
+.place-details { margin-top: 12px; display: flex; gap: 18px; flex-wrap: wrap; }
+.detail-item { display: grid; gap: 2px; }
+.detail-value { color: var(--text); font-size: 13px; line-height: 18px; font-weight: 800; }
+.place-footer { margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.maps-link, .route-search-link { display: inline-flex; align-items: center; gap: 4px; color: var(--primary); font-size: 12px; line-height: 16px; font-weight: 800; text-decoration: none; }
+.route-leg { padding: 2px 0 2px 20px; position: relative; }
+.route-leg::before { content: ''; position: absolute; left: 9px; top: -4px; bottom: -4px; width: 1px; background: var(--border-strong); }
+.route-leg-content { padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.route-info { display: flex; align-items: center; gap: 8px; }
+.route-mode-icon {
+  min-width: 44px; height: 28px; padding: 0 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-pill); background: var(--surface-muted); color: var(--text);
+  font-size: 11px; font-weight: 800;
+}
+.route-metrics { display: flex; gap: 10px; color: var(--text); font-size: 12px; line-height: 16px; font-weight: 800; }
+.day-warnings { margin-top: 10px; display: grid; gap: 8px; }
+
+.risk-group { padding: 12px; }
+.risk-group + .risk-group { margin-top: 10px; }
+.risk-group h4 { margin: 0 0 8px; display: flex; align-items: center; gap: 6px; font-size: 13px; line-height: 18px; }
+.risk-high { border-color: #f5b4bb; background: var(--surface-danger); }
+.risk-medium { border-color: #f4d389; background: var(--surface-warning); }
+.risk-low { border-color: #b8e9c8; background: var(--surface-success); }
+.risk-list { display: grid; gap: 8px; }
+.risk-item { display: grid; gap: 4px; color: var(--text); font-size: 13px; line-height: 18px; }
+.risk-recommendation { display: flex; align-items: flex-start; gap: 5px; color: var(--info); font-size: 12px; line-height: 17px; font-weight: 700; }
+.assumptions-section { margin-top: 12px; }
+.assumptions-toggle { padding: 0; display: inline-flex; align-items: center; gap: 4px; background: transparent; color: var(--text-muted); font-size: 12px; font-weight: 800; cursor: pointer; }
+.assumptions-list { margin: 8px 0 0 18px; padding: 0; color: var(--text-muted); font-size: 12px; line-height: 18px; }
+
+.decision-actions {
+  margin-top: auto; padding: 14px 16px;
+  display: grid; gap: 8px;
+  border-top: 1px solid var(--border); background: var(--surface-soft);
+}
+.decision-actions .primary-action, .decision-actions .secondary-action { width: 100%; }
+
+@keyframes bounce { 0%, 65%, 100% { transform: translateY(0); } 32% { transform: translateY(-4px); } }
+
+[hidden] { display: none !important; }
+
+@media (max-width: 1180px) {
+  :root { --workspace-width: clamp(340px, 36vw, 430px); }
+  .main-shell { grid-template-columns: minmax(390px, 1fr) var(--workspace-width); }
+}
+@media (max-width: 960px) {
+  .app-frame { height: auto; }
+  .app-layout { min-height: 100dvh; height: auto; display: block; }
+  .sidebar { display: none; }
+  .main-shell { height: auto; display: flex; flex-direction: column; }
+  .command-panel, .decision-canvas { width: 100%; height: auto; min-height: 620px; border: 0; }
+}
+</style>
+</head>
+<body>
+
+<div class="mockbar">
+  <strong>MOCK TĨNH</strong>
+  <span class="note">— UI hiện tại của Travel AI Agent · dữ liệu mẫu · không phải app chạy thật</span>
+  <span class="spacer"></span>
+  <button data-state="full" class="active">Trạng thái đầy đủ</button>
+  <button data-state="welcome">Màn hình chào</button>
+  <button data-state="processing">Đang xử lý</button>
+  <button data-state="empty">Workspace rỗng</button>
+</div>
+
+<div class="app-frame">
+<div class="app-layout">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div>
+        <h1>Travel AI</h1>
+        <p>Decision workspace</p>
+      </div>
+    </div>
+
+    <button class="new-chat-btn" type="button">Chuyến đi mới</button>
+
+    <nav class="recent-trips" aria-label="Gần đây">
+      <p>Gần đây</p>
+      <ul>
+        <li class="session-item-container">
+          <button class="session-btn active" type="button"><span class="session-title-text">Đà Nẵng 4N3Đ, 2 người</span></button>
+          <div class="session-actions-wrapper"><button class="session-menu-trigger" type="button">...</button></div>
+        </li>
+        <li class="session-item-container">
+          <button class="session-btn" type="button"><span class="session-title-text">Phú Quốc 3N2Đ, biển</span></button>
+          <div class="session-actions-wrapper"><button class="session-menu-trigger" type="button">...</button></div>
+        </li>
+        <li class="session-item-container">
+          <button class="session-btn" type="button"><span class="session-title-text">Thái Lan 5 ngày nhóm bạn</span></button>
+          <div class="session-actions-wrapper"><button class="session-menu-trigger" type="button">...</button></div>
+        </li>
+        <li class="session-item-container">
+          <button class="session-btn" type="button"><span class="session-title-text">Hà Giang loop 3 ngày</span></button>
+          <div class="session-actions-wrapper"><button class="session-menu-trigger" type="button">...</button></div>
+        </li>
+      </ul>
+    </nav>
+  </aside>
+
+  <main class="main-shell">
+
+    <!-- ============ COMMAND PANEL (CHAT) ============ -->
+    <section class="command-panel" aria-label="Lập kế hoạch chuyến đi">
+      <header class="command-header">
+        <h2>Lập kế hoạch chuyến đi</h2>
+        <div class="header-actions">
+          <button class="header-menu" type="button">Thu gọn</button>
+        </div>
+      </header>
+
+      <div class="messages-container">
+
+        <!-- Welcome state -->
+        <div class="welcome-screen" data-view="welcome" hidden>
+          <span class="welcome-kicker">Travel planner</span>
+          <h1 class="welcome-title">Biến ý tưởng du lịch thành kế hoạch có thể đi</h1>
+          <p class="welcome-sub">Nhập điểm đến, ngày đi, ngân sách và sở thích. Workspace sẽ kiểm tra lịch trình, chi phí, rủi ro và bước tiếp theo.</p>
+          <div class="welcome-suggestions">
+            <button type="button">Đà Nẵng 4N3Đ, 2 người, 10 triệu</button>
+            <button type="button">Phú Quốc 3N2Đ, biển và ăn uống</button>
+            <button type="button">Thái Lan 5 ngày, tối ưu chi phí</button>
+          </div>
+        </div>
+
+        <!-- Conversation -->
+        <div data-view="conversation">
+          <div class="bubble-row user" style="margin-bottom:20px">
+            <div class="bubble-avatar user">Bạn</div>
+            <div class="bubble user"><span>Lập lịch trình đi Đà Nẵng 4 ngày 3 đêm cho 2 người lớn, ngân sách khoảng 12 triệu. Thích đi dạo, ăn uống, không đi quá mệt.</span></div>
+          </div>
+
+          <div class="bubble-row assistant" style="margin-bottom:20px">
+            <div class="bubble-avatar assistant">AI</div>
+            <div class="bubble assistant">
+              <div class="md-content">
+                <p><strong>Đã dựng bản nháp kế hoạch Đà Nẵng 4N3Đ cho 2 người.</strong> Xem chi tiết ở workspace bên phải.</p>
+                <p>Tổng chi phí ước tính khoảng <strong>9.850.000 VND</strong>, dưới ngân sách 12 triệu. Phương án <strong>Cân bằng</strong> hiện phù hợp nhất với yêu cầu "không đi quá mệt".</p>
+                <ul>
+                  <li>Ngày 1–2 gom quanh trung tâm và biển Mỹ Khê</li>
+                  <li>Ngày 3 đi Bà Nà (cả ngày)</li>
+                  <li>Ngày 4 Hội An rồi ra sân bay</li>
+                </ul>
+                <p>Có một cảnh báo về mật độ ngày 3 — mình đã ghi ở phần Rủi ro.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interrupt / HITL -->
+          <div class="bubble-row assistant" data-view="interrupt">
+            <div class="bubble-avatar assistant">AI</div>
+            <div class="assistant-stack">
+              <div class="bubble assistant">
+                <div class="md-content"><p>Bạn có muốn xác nhận bản nháp này để mình chạy bước tìm dữ liệu vé, khách sạn và đánh giá chi tiết không?</p></div>
+              </div>
+              <div class="interrupt-card">
+                <h3>Xác nhận bản nháp kế hoạch?</h3>
+                <p>Kiểm tra phần workspace trước khi xác nhận để chạy bước tìm dữ liệu và đánh giá tiếp theo.</p>
+                <div class="interrupt-actions">
+                  <button class="interrupt-btn confirm" type="button">Xác nhận</button>
+                  <button class="interrupt-btn modify" type="button">Chỉnh sửa</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Typing indicator -->
+          <div class="typing-row" data-view="typing" hidden>
+            <div class="bubble-avatar assistant">AI</div>
+            <div class="typing-indicator">
+              <div class="typing-dots"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+              <span class="typing-status">Trợ lý Khách sạn đang tìm kiếm phòng...</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="chat-input-area">
+        <div class="chat-input-wrapper">
+          <textarea class="chat-input" placeholder="Mô tả điểm đến, ngày đi, ngân sách..." rows="3"></textarea>
+          <div class="composer-actions">
+            <span class="composer-hint">Enter để gửi, Shift + Enter để xuống dòng</span>
+            <button class="send-btn" type="button">Gửi</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ DECISION WORKSPACE ============ -->
+    <aside class="decision-canvas" aria-label="Trip decision workspace">
+      <header class="decision-header">
+        <div class="decision-title-row">
+          <div>
+            <p class="panel-kicker">Decision workspace</p>
+            <h2>Chuyến đi Đà Nẵng</h2>
+          </div>
+          <button class="header-menu" type="button">Thu gọn</button>
+        </div>
+
+        <div class="decision-status-card">
+          <div>
+            <span class="summary-pill warning">Cần chỉnh sửa</span>
+            <p>Lịch trình hoặc ngân sách cần điều chỉnh.</p>
+          </div>
+          <span class="data-mode-badge draft_only">Bản nháp</span>
+        </div>
+
+        <div class="trip-meta-grid">
+          <div><span>Thời lượng</span><strong>4 ngày</strong></div>
+          <div><span>Số người</span><strong>2</strong></div>
+          <div><span>Ngân sách</span><strong>12.000.000 VND</strong></div>
+          <div><span>Dự kiến</span><strong>9.850.000 VND</strong></div>
+        </div>
+      </header>
+
+      <div class="decision-scroll">
+
+        <!-- Empty state -->
+        <section class="workspace-empty" data-view="ws-empty" hidden>
+          <h3>Bắt đầu bằng một yêu cầu chuyến đi</h3>
+          <p>Workspace sẽ hiển thị kế hoạch, dữ liệu còn thiếu, chi phí, rủi ro và hành động tiếp theo.</p>
+          <ul>
+            <li>Điểm đến và ngày đi</li>
+            <li>Ngân sách và số người</li>
+            <li>Sở thích và mức di chuyển mong muốn</li>
+          </ul>
+        </section>
+
+        <div data-view="ws-full">
+
+        <!-- Plan draft -->
+        <section class="workspace-section plan-section">
+          <div class="section-heading">
+            <h3>Bản nháp kế hoạch</h3>
+            <button type="button">Chỉnh sửa</button>
+          </div>
+          <dl class="plan-summary">
+            <div><dt>Điểm đi</dt><dd>Hà Nội</dd></div>
+            <div><dt>Điểm đến</dt><dd>Đà Nẵng</dd></div>
+            <div><dt>Thời gian</dt><dd>2026-09-12 đến 2026-09-15</dd></div>
+            <div><dt>Sở thích</dt><dd>đi dạo, ăn uống, không quá mệt</dd></div>
+            <div><dt>Ưu tiên</dt><dd>Thoải mái nhất</dd></div>
+          </dl>
+        </section>
+
+        <!-- Missing fields -->
+        <section class="workspace-section missing-section">
+          <h3>Còn thiếu để xác nhận</h3>
+          <ul class="compact-list">
+            <li>Ngày về</li>
+            <li>Mức thoải mái</li>
+          </ul>
+        </section>
+
+        <!-- Evidence / why needs revision -->
+        <section class="workspace-section evidence-summary-section">
+          <h3>Tại sao cần chỉnh sửa?</h3>
+          <ul class="blocking-reasons-list">
+            <li class="blocking-reason-item"><span><strong>dense_day:</strong> Ngày 3 có 5 điểm, nên giảm còn 3 (5 điểm)</span></li>
+            <li class="blocking-reason-item"><span><strong>long_transfer:</strong> Chặng Bà Nà → trung tâm mất 55 phút (55 phút)</span></li>
+          </ul>
+        </section>
+
+        <!-- Option comparison -->
+        <section class="workspace-section option-comparison" aria-label="So sánh phương án">
+          <div class="section-heading stacked">
+            <h3>So sánh phương án</h3>
+            <p>Chỉ hiển thị như bản nháp cho đến khi dữ liệu đủ tin cậy để khuyến nghị.</p>
+          </div>
+          <div class="comparison-grid">
+            <article class="comparison-card">
+              <header class="comparison-header">
+                <div><strong>Tiết kiệm</strong><span>Khả thi có điều kiện</span></div>
+              </header>
+              <div class="comparison-cost"><span class="cost-label">Tổng chi phí</span><span class="big-cost">8.200.000 VND</span></div>
+              <div class="comparison-status">
+                <div class="status-item"><span>Mức khả thi</span><strong>Khả thi có điều kiện</strong></div>
+                <div class="status-item"><span>Mức thoải mái</span><strong>Cơ bản</strong></div>
+              </div>
+              <div class="comparison-tradeoffs"><span class="tradeoff-tag">bay sáng sớm</span><span class="tradeoff-tag">KS xa biển</span></div>
+              <ul class="comparison-reasons"><li>Vé rẻ nhất nhưng nối chuyến</li><li>Khách sạn cách biển 1.2km</li></ul>
+              <details class="comparison-breakdown"><summary>Chi tiết chi phí</summary></details>
+            </article>
+
+            <article class="comparison-card recommended">
+              <header class="comparison-header">
+                <div><strong>Cân bằng</strong><span>Khả thi</span></div>
+                <span class="rec-badge">Khuyến nghị</span>
+              </header>
+              <div class="comparison-cost"><span class="cost-label">Tổng chi phí</span><span class="big-cost">9.850.000 VND</span></div>
+              <div class="comparison-status">
+                <div class="status-item"><span>Mức khả thi</span><strong>Khả thi</strong></div>
+                <div class="status-item"><span>Mức thoải mái</span><strong>Tốt</strong></div>
+              </div>
+              <div class="comparison-tradeoffs"><span class="tradeoff-tag">giờ bay đẹp</span><span class="tradeoff-tag">gần biển</span></div>
+              <ul class="comparison-reasons"><li>Bay thẳng, giờ hợp lý</li><li>Khách sạn sát biển Mỹ Khê</li></ul>
+              <details class="comparison-breakdown"><summary>Chi tiết chi phí</summary></details>
+            </article>
+
+            <article class="comparison-card">
+              <header class="comparison-header">
+                <div><strong>Thoải mái</strong><span>Khả thi</span></div>
+              </header>
+              <div class="comparison-cost"><span class="cost-label">Tổng chi phí</span><span class="big-cost">13.400.000 VND</span></div>
+              <div class="comparison-status">
+                <div class="status-item"><span>Mức khả thi</span><strong>Khả thi</strong></div>
+                <div class="status-item"><span>Mức thoải mái</span><strong>Cao</strong></div>
+              </div>
+              <div class="comparison-tradeoffs"><span class="tradeoff-tag">vượt ngân sách</span><span class="tradeoff-tag">resort 5 sao</span></div>
+              <ul class="comparison-reasons"><li>Resort 5 sao, hồ bơi vô cực</li><li>Vượt ngân sách ~1.4 triệu</li></ul>
+              <details class="comparison-breakdown"><summary>Chi tiết chi phí</summary></details>
+            </article>
+          </div>
+        </section>
+
+        <!-- Cost breakdown -->
+        <section class="workspace-section cost-panel" aria-label="Chi phí chi tiết">
+          <div class="section-heading stacked">
+            <h3>Chi phí</h3>
+            <p>Ước tính để kiểm tra ngân sách trước khi đặt chỗ.</p>
+          </div>
+          <div class="cost-summary">
+            <div class="cost-total">
+              <span class="cost-total-label">Tổng chi phí</span>
+              <span class="cost-total-value">9.850.000 VND</span>
+            </div>
+            <div class="cost-per-person">
+              <span>Mỗi người</span>
+              <strong>4.925.000 VND</strong>
+            </div>
+            <div class="cost-status">
+              <span class="budget-badge badge-success">Dưới ngân sách</span>
+              <span class="budget-delta under">-2.150.000 VND</span>
+            </div>
+          </div>
+          <ul class="cost-detail-list">
+            <li><span class="cost-detail-label">Vé máy bay</span><strong class="cost-detail-value">3.600.000 VND</strong></li>
+            <li><span class="cost-detail-label">Khách sạn</span><strong class="cost-detail-value">3.000.000 VND</strong></li>
+            <li><span class="cost-detail-label">Ăn uống</span><strong class="cost-detail-value">1.800.000 VND</strong></li>
+            <li><span class="cost-detail-label">Di chuyển</span><strong class="cost-detail-value">700.000 VND</strong></li>
+            <li><span class="cost-detail-label">Vé tham quan</span><strong class="cost-detail-value">550.000 VND</strong></li>
+            <li><span class="cost-detail-label">Dự phòng</span><strong class="cost-detail-value">200.000 VND</strong></li>
+          </ul>
+          <details class="cost-assumptions">
+            <summary>Giả định chi phí</summary>
+            <ul>
+              <li>Ăn uống 150.000 VND/người/bữa</li>
+              <li>Taxi/Grab nội thành trung bình 80.000 VND/lượt</li>
+            </ul>
+          </details>
+          <div class="data-freshness">
+            <span class="freshness-tag">Vé máy bay: 31/08/2026 09:12</span>
+            <span class="freshness-tag">Khách sạn: 31/08/2026 09:12</span>
+          </div>
+        </section>
+
+        <!-- Itinerary timeline -->
+        <section class="workspace-section itinerary-timeline" aria-label="Lịch trình theo ngày">
+          <div class="section-heading stacked">
+            <h3>Lịch trình theo ngày</h3>
+            <p>Kiểm tra thứ tự điểm đến, thời gian di chuyển và điểm chưa xác minh.</p>
+          </div>
+          <div class="timeline-container">
+
+            <article class="timeline-day">
+              <div class="timeline-header">
+                <div class="day-label"><span>Ngày 1 — Trung tâm &amp; biển</span><small>2026-09-12</small></div>
+              </div>
+              <div class="timeline-items">
+                <div class="place-card">
+                  <div class="place-card-header">
+                    <div>
+                      <span class="place-category">ăn uống</span>
+                      <h4 class="place-title">Bún chả cá 109 Nguyễn Chí Thanh</h4>
+                      <div class="place-area">Hải Châu, Đà Nẵng</div>
+                    </div>
+                    <span class="trust-badge verified">Đã xác thực</span>
+                  </div>
+                  <div class="place-details">
+                    <div class="detail-item"><span class="detail-label">Thời gian</span><span class="detail-value">60 phút</span></div>
+                    <div class="detail-item"><span class="detail-label">Dự kiến chi</span><span class="detail-value">120.000 VND</span></div>
+                  </div>
+                  <div class="place-footer">
+                    <a href="#" class="maps-link">Mở Maps</a>
+                    <button class="action-btn" type="button">Thay địa điểm</button>
+                  </div>
+                </div>
+
+                <div class="route-leg">
+                  <div class="route-leg-content">
+                    <div class="route-info">
+                      <div class="route-mode-icon">Xe</div>
+                      <div><div class="route-metrics"><span>2.4 km</span><span>9 phút</span></div></div>
+                    </div>
+                    <span class="trust-badge estimated">Ước tính</span>
+                  </div>
+                </div>
+
+                <div class="place-card">
+                  <div class="place-card-header">
+                    <div>
+                      <span class="place-category">tham quan</span>
+                      <h4 class="place-title">Cầu Rồng</h4>
+                      <div class="place-area">Sông Hàn, Đà Nẵng</div>
+                    </div>
+                    <span class="trust-badge verified">Đã xác thực</span>
+                  </div>
+                  <div class="place-details">
+                    <div class="detail-item"><span class="detail-label">Thời gian</span><span class="detail-value">45 phút</span></div>
+                  </div>
+                  <div class="place-footer">
+                    <a href="#" class="maps-link">Mở Maps</a>
+                    <button class="action-btn" type="button">Thay địa điểm</button>
+                  </div>
+                </div>
+
+                <div class="route-leg">
+                  <div class="route-leg-content">
+                    <div class="route-info">
+                      <div class="route-mode-icon">Đi bộ</div>
+                      <div><a href="#" class="route-search-link">Tìm trên Maps</a></div>
+                    </div>
+                    <span class="trust-badge unverified">Chưa kiểm chứng</span>
+                  </div>
+                </div>
+
+                <div class="place-card">
+                  <div class="place-card-header">
+                    <div>
+                      <span class="place-category">biển</span>
+                      <h4 class="place-title">Bãi biển Mỹ Khê</h4>
+                      <div class="place-area">Phước Mỹ, Sơn Trà</div>
+                    </div>
+                    <span class="trust-badge verified">Đã xác thực</span>
+                  </div>
+                  <div class="place-details">
+                    <div class="detail-item"><span class="detail-label">Thời gian</span><span class="detail-value">120 phút</span></div>
+                  </div>
+                  <div class="place-footer"><a href="#" class="maps-link">Mở Maps</a></div>
+                </div>
+              </div>
+            </article>
+
+            <article class="timeline-day">
+              <div class="timeline-header">
+                <div class="day-label"><span>Ngày 3 — Bà Nà Hills</span><small>2026-09-14</small></div>
+                <button class="action-btn" type="button">Tối ưu ngày</button>
+              </div>
+              <div class="timeline-items">
+                <div class="place-card">
+                  <div class="place-card-header">
+                    <div>
+                      <span class="place-category">tham quan</span>
+                      <h4 class="place-title">Sun World Bà Nà Hills</h4>
+                      <div class="place-area">Hòa Ninh, Hòa Vang</div>
+                    </div>
+                    <span class="trust-badge estimated">Ước tính</span>
+                  </div>
+                  <div class="place-details">
+                    <div class="detail-item"><span class="detail-label">Thời gian</span><span class="detail-value">360 phút</span></div>
+                    <div class="detail-item"><span class="detail-label">Dự kiến chi</span><span class="detail-value">900.000 VND</span></div>
+                  </div>
+                  <div class="place-footer">
+                    <a href="#" class="maps-link">Mở Maps</a>
+                    <button class="action-btn" type="button">Thay địa điểm</button>
+                  </div>
+                </div>
+              </div>
+              <div class="day-warnings">
+                <div class="workspace-warning">
+                  <strong>dense_day</strong>
+                  <p>Thực tế: 5 điểm trong ngày</p>
+                  <p>Gợi ý: Giảm còn 3 điểm hoặc chuyển 2 điểm sang ngày 4</p>
+                </div>
+                <div class="workspace-warning">
+                  <strong>long_transfer</strong>
+                  <p>Thực tế: Bà Nà → trung tâm 55 phút</p>
+                  <p>Gợi ý: Về khách sạn nghỉ trước khi đi ăn tối</p>
+                </div>
+              </div>
+            </article>
+
+          </div>
+        </section>
+
+        <!-- Risk panel -->
+        <section class="workspace-section risk-panel" aria-label="Rủi ro và giả định">
+          <div class="section-heading stacked">
+            <h3>Rủi ro và cảnh báo</h3>
+            <p>Các điểm cần kiểm tra trước khi đặt chỗ hoặc chốt lịch.</p>
+          </div>
+
+          <div class="risk-group risk-high">
+            <h4>Cao (1)</h4>
+            <ul class="risk-list">
+              <li class="risk-item">
+                <span class="risk-message">Ngày 3 quá dày: 5 điểm + đi Bà Nà cả ngày, tổng di chuyển 95 phút.</span>
+                <span class="risk-recommendation">Bấm "Tối ưu ngày" hoặc bỏ 2 điểm phụ.</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="risk-group risk-medium">
+            <h4>Trung bình (2)</h4>
+            <ul class="risk-list">
+              <li class="risk-item">
+                <span class="risk-message">Xác suất mưa ngày 2 là 60% (chiều).</span>
+                <span class="risk-recommendation">Đổi hoạt động ngoài trời sang buổi sáng.</span>
+              </li>
+              <li class="risk-item">
+                <span class="risk-message">Giá vé máy bay là dữ liệu ước tính, chưa xác minh theo thời gian thực.</span>
+                <span class="risk-recommendation">Kiểm tra lại trên trang đặt vé trước khi chốt.</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="risk-group risk-low">
+            <h4>Thấp (1)</h4>
+            <ul class="risk-list">
+              <li class="risk-item">
+                <span class="risk-message">Một số tuyến đường bộ ngắn chưa có dữ liệu chỉ đường.</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="assumptions-section">
+            <button type="button" class="assumptions-toggle">Giả định (3)</button>
+            <ul class="assumptions-list">
+              <li>Tỷ giá và giá vé lấy tại thời điểm truy vấn</li>
+              <li>Thời gian tại mỗi điểm là trung bình tham khảo</li>
+              <li>Chưa tính chi phí phát sinh cá nhân</li>
+            </ul>
+          </div>
+        </section>
+
+        </div><!-- /ws-full -->
+      </div>
+
+      <footer class="decision-actions">
+        <a class="secondary-action" href="#">Xuất Markdown</a>
+        <button class="secondary-action" type="button">In PDF</button>
+      </footer>
+    </aside>
+
+  </main>
+</div>
+</div>
+
+<script>
+// Chuyển trạng thái hiển thị — chỉ phục vụ mock, không có trong app thật.
+const views = {
+  full:       { welcome:false, conversation:true,  interrupt:true,  typing:false, wsFull:true,  wsEmpty:false },
+  welcome:    { welcome:true,  conversation:false, interrupt:false, typing:false, wsFull:false, wsEmpty:true  },
+  processing: { welcome:false, conversation:true,  interrupt:false, typing:true,  wsFull:true,  wsEmpty:false },
+  empty:      { welcome:false, conversation:false, interrupt:false, typing:false, wsFull:false, wsEmpty:true  },
+};
+function pick(sel){ return document.querySelector(sel); }
+function apply(name){
+  const v = views[name];
+  pick('[data-view="welcome"]').hidden      = !v.welcome;
+  pick('[data-view="conversation"]').hidden = !v.conversation;
+  pick('[data-view="interrupt"]').hidden    = !v.interrupt;
+  pick('[data-view="typing"]').hidden       = !v.typing;
+  pick('[data-view="ws-full"]').hidden      = !v.wsFull;
+  pick('[data-view="ws-empty"]').hidden     = !v.wsEmpty;
+  document.querySelectorAll('.mockbar button').forEach(b => b.classList.toggle('active', b.dataset.state === name));
+}
+document.querySelectorAll('.mockbar button').forEach(b => b.addEventListener('click', () => apply(b.dataset.state)));
+apply('full');
+</script>
+</body>
+</html>

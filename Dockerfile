@@ -1,35 +1,21 @@
-# Build Frontend
-FROM node:20-alpine AS frontend-builder
-WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm ci
-COPY frontend/ .
-RUN npm run build
+# ── Base image ─────────────────────────────
+FROM python:3.12-slim
 
-# Build Backend
-FROM python:3.11-slim
+# ── Working directory ──────────────────────
 WORKDIR /app
 
-# Install dependencies
-COPY pyproject.toml .
-RUN pip install --no-cache-dir .
+# ── Force Python to flush stdout/stderr ───
+ENV PYTHONUNBUFFERED=1
 
-# Copy backend code
-COPY src/ ./src/
-COPY main.py .
+# ── Install dependencies (cache layer) ────
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy frontend static build (optional, if served by FastAPI)
-COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
+# ── Copy source code ──────────────────────
+COPY . .
 
-# Ensure SQLite data dir exists
-RUN mkdir -p /app/data
-
-# Environment
-ENV PYTHONPATH=/app/src
-ENV DEMO_MODE=false
-ENV PORT=8000
-
+# ── Expose port ───────────────────────────
 EXPOSE 8000
 
-# Start command
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# ── Run server ────────────────────────────
+CMD ["uvicorn", "--app-dir", "src", "travel_ai_agent.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
